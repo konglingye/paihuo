@@ -1,0 +1,51 @@
+/* 视觉令牌迁自 prototype/paihuo-prototype.html 头部 :root（改动需同步双方） */
+@theme {
+  --color-ink: #1b2333;
+  --color-sub: #5c6580;
+  --color-faint: #9ba3bc;
+  --color-hair: rgba(30, 45, 90, 0.1);
+  --color-hairsoft: rgba(30, 45, 90, 0.06);
+  --color-wash: rgba(61, 111, 252, 0.05);
+  --color-accent: #3d6ffc;
+  --color-accent-ink: #2b57e6;
+  --color-accent-soft: #eaf1ff;
+  --color-ok: #10a65a;
+  --color-ok-soft: #e1f6ec;
+  --color-red: #f5544b;
+  --color-red-soft: #feedec;
+  --color-gray-soft: rgba(30, 45, 90, 0.06);
+  --color-gray-ink: #5c6580;
+
+  --radius-panel: 32px;
+  --radius-card: 19px;
+  --radius-btn: 14px;
+
+  --shadow-card: 0 2px 6px -1px rgba(45, 80, 180, 0.08);
+  --shadow-lift: 0 14px 30px -12px rgba(45, 80, 180, 0.24);
+  --shadow-panel:
+    0 40px 92px -30px rgba(40, 70, 160, 0.34), 0 6px 18px -8px rgba(40, 70, 160, 0.1);
+}
+
+:root {
+  --btn-ink: linear-gradient(135deg, #5185ff, #3d6ffc 55%, #385ff2);
+  --btn-ink-h: linear-gradient(135deg, #6192ff, #3d6ffc 55%, #3054e8);
+}
+
+.btn-gradient {
+  background-image: var(--btn-ink);
+}
+.btn-gradient:hover {
+  background-image: var(--btn-ink-h);
+}
+
+.ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -3px;
+}
