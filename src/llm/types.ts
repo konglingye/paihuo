@@ -1,8 +1,19 @@
-export type ChatRole = 'system' | 'user' | 'assistant';
+export type ChatRole = 'system' | 'user' | 'assistant' | 'tool';
+
+/** 累积后的一次工具调用请求（agent loop 负责 JSON.parse(arguments) + zod 校验） */
+export interface ToolCallRequestPart {
+  id: string;
+  name: string;
+  arguments: string;
+}
 
 export interface ChatMessage {
   role: ChatRole;
   content: string;
+  /** role: 'tool' 时，对应回应哪次调用 */
+  toolCallId?: string;
+  /** role: 'assistant' 且这轮发起了工具调用时携带 */
+  toolCalls?: ToolCallRequestPart[];
 }
 
 export interface Usage {
@@ -31,6 +42,13 @@ export class LlmError extends Error {
   }
 }
 
+/** 暴露给模型的工具定义（与 ToolRegistry.toJsonSchemaList() 输出同形状） */
+export interface LlmToolSpec {
+  name: string;
+  description: string;
+  parameters: object;
+}
+
 export interface StreamChatCompletionParams {
   baseUrl: string;
   apiKey: string;
@@ -39,6 +57,7 @@ export interface StreamChatCompletionParams {
   temperature?: number;
   /** 单次请求超时（毫秒），默认 30000 */
   timeoutMs?: number;
+  tools?: LlmToolSpec[];
 }
 
 export interface StreamChatCompletionCallbacks {
@@ -49,6 +68,7 @@ export interface StreamChatCompletionCallbacks {
 export interface StreamChatCompletionResult {
   content: string;
   usage?: Usage;
+  toolCalls?: ToolCallRequestPart[];
 }
 
 export type StreamChatCompletion = (

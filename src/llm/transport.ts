@@ -1,15 +1,23 @@
 import {
   LlmError,
+  type ChatMessage,
   type StreamChatCompletionCallbacks,
   type StreamChatCompletionParams,
   type StreamChatCompletionResult,
+  type ToolCallRequestPart,
   type Usage,
 } from './types';
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
+interface RawToolCallDelta {
+  index: number;
+  id?: string;
+  function?: { name?: string; arguments?: string };
+}
+
 interface RawStreamChunk {
-  choices?: { delta?: { content?: string } }[];
+  choices?: { delta?: { content?: string; tool_calls?: RawToolCallDelta[] } }[];
   usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
 }
 
@@ -34,13 +42,32 @@ function classifyHttpError(status: number, bodyText: string): LlmError {
   return new LlmError('unknown', message, status);
 }
 
+/** 把内部消息格式序列化成 OpenAI 兼容的请求体消息 */
+function toWireMessage(message: ChatMessage): Record<string, unknown> {
+  if (message.role === 'tool') {
+    return { role: 'tool', content: message.content, tool_call_id: message.toolCallId };
+  }
+  if (message.role === 'assistant' && message.toolCalls?.length) {
+    return {
+      role: 'assistant',
+      content: message.content,
+      tool_calls: message.toolCalls.map((tc) => ({
+        id: tc.id,
+        type: 'function',
+        function: { name: tc.name, arguments: tc.arguments },
+      })),
+    };
+  }
+  return { role: message.role, content: message.content };
+}
+
 /** 经统一 harness 调用的 OpenAI 兼容 SSE 流式传输。真实网络请求只应在 background 里发起（见 background-bridge.ts）。 */
 export async function streamChatCompletion(
   params: StreamChatCompletionParams,
   callbacks: StreamChatCompletionCallbacks,
   signal?: AbortSignal,
 ): Promise<StreamChatCompletionResult> {
-  const { baseUrl, apiKey, model, messages, temperature, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+  const { baseUrl, apiKey, model, messages, temperature, tools, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
   const internalController = new AbortController();
   let timedOut = false;
   let externallyAborted = false;
@@ -73,7 +100,20 @@ export async function streamChatCompletion(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({ model, messages, temperature, stream: true }),
+        body: JSON.stringify({
+          model,
+          messages: messages.map(toWireMessage),
+          temperature,
+          stream: true,
+          ...(tools?.length
+            ? {
+                tools: tools.map((tool) => ({
+                  type: 'function',
+                  function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+                })),
+              }
+            : {}),
+        }),
         signal: internalController.signal,
       });
     } catch (err) {
@@ -100,6 +140,12 @@ export async function streamChatCompletion(
   }
 }
 
+interface ToolCallAccumulator {
+  id?: string;
+  name?: string;
+  arguments: string;
+}
+
 async function parseSse(
   body: ReadableStream<Uint8Array>,
   callbacks: StreamChatCompletionCallbacks,
@@ -109,6 +155,15 @@ async function parseSse(
   let buffer = '';
   let content = '';
   let usage: Usage | undefined;
+  const toolCallAccumulators = new Map<number, ToolCallAccumulator>();
+
+  const finalize = (): StreamChatCompletionResult => {
+    if (toolCallAccumulators.size === 0) return { content, usage };
+    const toolCalls: ToolCallRequestPart[] = [...toolCallAccumulators.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, acc]) => ({ id: acc.id ?? '', name: acc.name ?? '', arguments: acc.arguments }));
+    return { content, usage, toolCalls };
+  };
 
   try {
     while (true) {
@@ -122,7 +177,7 @@ async function parseSse(
         const trimmed = line.trim();
         if (!trimmed.startsWith('data:')) continue;
         const dataStr = trimmed.slice('data:'.length).trim();
-        if (dataStr === '[DONE]') return { content, usage };
+        if (dataStr === '[DONE]') return finalize();
 
         let chunk: RawStreamChunk;
         try {
@@ -131,10 +186,19 @@ async function parseSse(
           continue;
         }
 
-        const delta = chunk.choices?.[0]?.delta?.content;
-        if (delta) {
-          content += delta;
-          callbacks.onDelta?.(delta);
+        const delta = chunk.choices?.[0]?.delta;
+        if (delta?.content) {
+          content += delta.content;
+          callbacks.onDelta?.(delta.content);
+        }
+        if (delta?.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            const acc = toolCallAccumulators.get(tc.index) ?? { arguments: '' };
+            if (tc.id) acc.id = tc.id;
+            if (tc.function?.name) acc.name = (acc.name ?? '') + tc.function.name;
+            if (tc.function?.arguments) acc.arguments += tc.function.arguments;
+            toolCallAccumulators.set(tc.index, acc);
+          }
         }
         if (chunk.usage) {
           usage = {
@@ -146,7 +210,7 @@ async function parseSse(
         }
       }
     }
-    return { content, usage };
+    return finalize();
   } finally {
     reader.releaseLock();
   }

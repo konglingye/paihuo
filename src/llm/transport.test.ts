@@ -136,3 +136,140 @@ describe('streamChatCompletion', () => {
     ).rejects.toMatchObject({ kind: 'network' });
   });
 });
+
+function readRequestBody(req: http.IncomingMessage): Promise<string> {
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+  });
+}
+
+describe('streamChatCompletion 工具调用', () => {
+  it('请求体带上 tools（转成 OpenAI 的 function 包装）', async () => {
+    let capturedBody = '';
+    const baseUrl = await startServer(async (req, res) => {
+      capturedBody = await readRequestBody(req);
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.end('data: [DONE]\n\n');
+    });
+
+    await streamChatCompletion(
+      {
+        ...baseParams,
+        baseUrl,
+        tools: [{ name: 'list_tasks', description: '列出任务', parameters: { type: 'object', properties: {} } }],
+      },
+      {},
+    );
+
+    const parsed = JSON.parse(capturedBody);
+    expect(parsed.tools).toEqual([
+      {
+        type: 'function',
+        function: {
+          name: 'list_tasks',
+          description: '列出任务',
+          parameters: { type: 'object', properties: {} },
+        },
+      },
+    ]);
+  });
+
+  it('assistant 的 toolCalls 与 tool 角色消息按 OpenAI 格式序列化', async () => {
+    let capturedBody = '';
+    const baseUrl = await startServer(async (req, res) => {
+      capturedBody = await readRequestBody(req);
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.end('data: [DONE]\n\n');
+    });
+
+    await streamChatCompletion(
+      {
+        ...baseParams,
+        baseUrl,
+        messages: [
+          { role: 'user', content: '把纪要发出去' },
+          {
+            role: 'assistant',
+            content: '',
+            toolCalls: [{ id: 'call_1', name: 'complete_task', arguments: '{"id":"t1"}' }],
+          },
+          { role: 'tool', content: '{"ok":true}', toolCallId: 'call_1' },
+        ],
+      },
+      {},
+    );
+
+    const parsed = JSON.parse(capturedBody);
+    expect(parsed.messages[1]).toEqual({
+      role: 'assistant',
+      content: '',
+      tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'complete_task', arguments: '{"id":"t1"}' } }],
+    });
+    expect(parsed.messages[2]).toEqual({ role: 'tool', content: '{"ok":true}', tool_call_id: 'call_1' });
+  });
+
+  it('解析流式 tool_calls delta，跨多个分片累积出完整的调用参数', async () => {
+    const baseUrl = await startServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write(
+        `data: ${JSON.stringify({
+          choices: [
+            { delta: { tool_calls: [{ index: 0, id: 'call_1', function: { name: 'complete_task', arguments: '{"id":"' } }] } },
+          ],
+        })}\n\n`,
+      );
+      res.write(
+        `data: ${JSON.stringify({
+          choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: 't1"}' } }] } }],
+        })}\n\n`,
+      );
+      res.write('data: [DONE]\n\n');
+      res.end();
+    });
+
+    const result = await streamChatCompletion({ ...baseParams, baseUrl }, {});
+    expect(result.toolCalls).toEqual([{ id: 'call_1', name: 'complete_task', arguments: '{"id":"t1"}' }]);
+  });
+
+  it('解析并发多个 tool_calls（按 index 分开累积，不串号）', async () => {
+    const baseUrl = await startServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write(
+        `data: ${JSON.stringify({
+          choices: [
+            {
+              delta: {
+                tool_calls: [
+                  { index: 0, id: 'call_a', function: { name: 'get_task', arguments: '{"id":"a"}' } },
+                  { index: 1, id: 'call_b', function: { name: 'get_task', arguments: '{"id":"b"}' } },
+                ],
+              },
+            },
+          ],
+        })}\n\n`,
+      );
+      res.write('data: [DONE]\n\n');
+      res.end();
+    });
+
+    const result = await streamChatCompletion({ ...baseParams, baseUrl }, {});
+    expect(result.toolCalls).toEqual([
+      { id: 'call_a', name: 'get_task', arguments: '{"id":"a"}' },
+      { id: 'call_b', name: 'get_task', arguments: '{"id":"b"}' },
+    ]);
+  });
+
+  it('没有任何 tool_calls 时 result.toolCalls 为 undefined', async () => {
+    const baseUrl = await startServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: '普通回复' } }] })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+    });
+
+    const result = await streamChatCompletion({ ...baseParams, baseUrl }, {});
+    expect(result.toolCalls).toBeUndefined();
+  });
+});
