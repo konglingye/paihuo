@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing';
 import { useTasksStore } from './tasksStore';
-import type { TaskDraft } from './tasksStore';
+import type { TaskDraft } from './schema';
 
 const draftA: TaskDraft = {
   title: '整理今天的会议纪要，下班前发群里',

@@ -35,6 +35,21 @@ export const TaskSchema = z.object({
 });
 export type Task = z.infer<typeof TaskSchema>;
 
+/** create_tasks 工具入参用的草稿形状：比 Task 少 id/status/createdAt/doneAt（由 store 生成） */
+export const TaskDraftSchema = z.object({
+  title: z.string(),
+  note: z.string().optional(),
+  type: TaskTypeSchema,
+  fit: FitSchema,
+  toolId: z.string().optional(),
+  prompt: z.string().optional(),
+  due: TaskDueSchema.optional(),
+  groupId: z.string().optional(),
+  saveMin: z.number(),
+  fragmentId: z.string(),
+});
+export type TaskDraft = z.infer<typeof TaskDraftSchema>;
+
 export const FragmentAttachmentSchema = z.object({
   name: z.string(),
   text: z.string().optional(),

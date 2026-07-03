@@ -49,8 +49,9 @@
 - [x] **T07 上下文管理器**（arch §3）：token 估算、状态快照块（任务板一行一任务）、附件摘录+`read_attachment` 分块、历史窗口+滚动摘要压缩。
   DoD：vitest：超预算触发压缩且未决事项保留（压缩 eval fixture）；快照块随 store 变化。
   ✅ 2026-07-04 验证方式：`src/agents/harness/context.ts` 实现状态快照块（任务一行一条，不含完整 JSON，测试验证随 tasksStore 增删改实时变化）、附件摘录（首 1k 字+附件名，超长提示走 read_attachment）、`CalibratedEstimator`（chars/1.6 启发式 + usage 校准滑动平均）、`needsCompression`/`compressHistory`（会话历史 8k 预算、超预算时把最老一段交给注入的 summarize 函数、保留最近≥6 轮原文不动、压缩 eval fixture 验证"未决事项"信息经摘要保留且压缩后不再超预算）；`src/agents/tools/content.ts` 落地 `read_attachment`（按 2000 字分块翻页，含附件文本拼接，chunk 越界报错），10+7 共 17 个用例全绿；`pnpm test`（21 文件 138 用例）/`pnpm compile`/`pnpm build` 全绿。get_prompt_template/draft_user_prompt/draft_message 留给 T10 补齐同一个 content.ts。
-- [ ] **T08 提示词装配器**（arch §4）：六块模板（identity/tool-policy/state/contract/style/memory）+ 四个 profile 的块组合与参数；快照测试锁定；`#/trace` dev 页（run 列表+逐轮展开）。
+- [x] **T08 提示词装配器**（arch §4）：六块模板（identity/tool-policy/state/contract/style/memory）+ 四个 profile 的块组合与参数；快照测试锁定；`#/trace` dev 页（run 列表+逐轮展开）。
   DoD：`pnpm test` 快照绿；mock 下手动跑一次 decomposer run，在 `#/trace` 能看到完整装配与逐轮记录。
+  ✅ 2026-07-04 验证方式：`src/agents/prompts/blocks/*`（identity/tool-policy/state/contract/style/memory，六块均首行注释写"为什么存在"）+ `assemble.ts` 按顺序拼接、空块自动跳过，11 个快照/行为用例；`src/agents/profiles/{decomposer,organizer,reporter,orchestrator}.ts` 组装四个 profile（含 decomposer/organizer 的 zod 输出契约、fallback 降级、工具白名单、按 spec 差异化 temperature），13 个用例+4 份系统提示词快照；新增 `src/agents/registry.ts`（汇总当前已落地工具）与 `src/store/traceStore.ts`（AgentRun 环形缓冲最近 100 条，持久化+roundtrip 测试）；`src/mocks/llm/fixtures.ts` 补发布会四任务剧本 fixture（与原型 seedTasks/newTasks 对齐），验证拼出内容通过 `DecomposerOutputSchema`；`entrypoints/trace`（unlisted-page）实现 `#/trace` dev 页——run 列表+点击展开逐轮详情（assistantText/toolCalls/usage/durationMs/finalOutput），带「跑一次 decomposer（mock）」按钮；`pnpm build` 后用 Playwright 加载真实解包扩展点击该按钮，截图确认 run 出现、outcome=contract、4 个任务的 finalOutput 完整展示，控制台无报错；`pnpm test`（25 文件 169 用例）/`pnpm compile`/`pnpm build` 全绿。**M1 里程碑完成**：mock 下多轮工具调用 + trace 全链路可跑可查。
 
 ### M2 接上 AI
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mockStreamChatCompletion } from './mockTransport';
-import { DEFAULT_FIXTURE, FIXTURES } from './fixtures';
+import { DECOMPOSER_SAMPLE_INPUT, DEFAULT_FIXTURE, FIXTURES } from './fixtures';
+import { DecomposerOutputSchema } from '@/src/agents/profiles/decomposer';
 
 describe('mockStreamChatCompletion', () => {
   it('没有 fixture 命中时用 DEFAULT_FIXTURE，逐片调用 onDelta 并拼出完整内容', async () => {
@@ -63,5 +64,24 @@ describe('mockStreamChatCompletion', () => {
 
     await expect(promise).rejects.toMatchObject({ kind: 'aborted' });
     expect(deltas.length).toBeLessThan(DEFAULT_FIXTURE.chunks.length);
+  });
+
+  it('拆解官发布会剧本 fixture 拼出的内容符合 DecomposerOutputSchema', async () => {
+    const result = await mockStreamChatCompletion(
+      {
+        baseUrl: 'mock://',
+        apiKey: '',
+        model: 'mock',
+        messages: [{ role: 'user', content: DECOMPOSER_SAMPLE_INPUT }],
+      },
+      {},
+    );
+
+    const parsed = DecomposerOutputSchema.safeParse(JSON.parse(result.content));
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.tasks).toHaveLength(4);
+      expect(parsed.data.relates[0].aIds).toEqual(['n2', 'n3']);
+    }
   });
 });

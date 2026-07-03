@@ -2,20 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { chromeStorage } from './storage';
 import { SCHEMA_VERSION } from './version';
-import type { Fit, Task, TaskDue, TaskType } from './schema';
-
-export interface TaskDraft {
-  title: string;
-  note?: string;
-  type: TaskType;
-  fit: Fit;
-  toolId?: string;
-  prompt?: string;
-  due?: TaskDue;
-  groupId?: string;
-  saveMin: number;
-  fragmentId: string;
-}
+import type { Task, TaskDraft } from './schema';
 
 interface TasksState {
   tasks: Record<string, Task>;

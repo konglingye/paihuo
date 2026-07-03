@@ -2,21 +2,8 @@ import { z } from 'zod';
 import { useTasksStore } from '@/src/store/tasksStore';
 import { useGroupsStore } from '@/src/store/groupsStore';
 import { useRelationsStore } from '@/src/store/relationsStore';
-import { FitSchema, TaskDueSchema, TaskStatusSchema, TaskTypeSchema } from '@/src/store/schema';
+import { FitSchema, TaskDraftSchema, TaskDueSchema, TaskStatusSchema, TaskTypeSchema } from '@/src/store/schema';
 import type { ToolDefinition } from '../harness/tools';
-
-const TaskDraftSchema = z.object({
-  title: z.string(),
-  note: z.string().optional(),
-  type: TaskTypeSchema,
-  fit: FitSchema,
-  toolId: z.string().optional(),
-  prompt: z.string().optional(),
-  due: TaskDueSchema.optional(),
-  groupId: z.string().optional(),
-  saveMin: z.number(),
-  fragmentId: z.string(),
-});
 
 function requireTask(id: string) {
   const task = useTasksStore.getState().tasks[id];
