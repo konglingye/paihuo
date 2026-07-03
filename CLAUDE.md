@@ -5,8 +5,9 @@
 ## 三份权威文件（冲突时以此为准，从上到下优先级递减）
 
 1. **用户的明确指令**（对话里说的）
-2. [`docs/00-product-spec.md`](docs/00-product-spec.md) — 产品规格 SSOT：功能、数据模型、提示词、范围边界
-3. [`prototype/paihuo-prototype.html`](prototype/paihuo-prototype.html) — **UI/UX SSOT**：视觉令牌、布局、文案、微交互全部以它为准（用浏览器打开对照着做，配色是「豆包蓝」浅色系，令牌在文件头部 `:root`）
+2. [`docs/00-product-spec.md`](docs/00-product-spec.md) — 产品规格 SSOT：功能、数据模型、Profile 行为契约、范围边界
+3. [`docs/02-agent-architecture.md`](docs/02-agent-architecture.md) — **智能体机制 SSOT**：harness（agent loop / 工具编排 / 提示词装配 / 上下文管理 / 事件 / trace / evals）。**硬规则：所有 LLM 能力必须经 harness 运行，UI 组件禁止裸调 chat completions。**
+4. [`prototype/paihuo-prototype.html`](prototype/paihuo-prototype.html) — **UI/UX SSOT**：视觉令牌、布局、文案、微交互全部以它为准（用浏览器打开对照着做，配色是「豆包蓝」浅色系，令牌在文件头部 `:root`）
 
 开发顺序与任务定义在 [`docs/01-dev-plan.md`](docs/01-dev-plan.md)，按 **Goal 运行协议**推进。
 
@@ -27,7 +28,7 @@
 
 ## 技术栈（已锁定，勿换）
 
-`WXT`（MV3 框架）+ React 18 + TypeScript + Tailwind CSS + `zustand`（persist → `chrome.storage.local`）；pnpm；测试 `vitest` + Playwright（加载解包扩展）；文本抽取 `pdfjs-dist` / `mammoth` / `xlsx`。图标一律内联 SVG（Lucide 风格，参照原型 symbol 表），**禁止 emoji 当图标、禁止外链 CDN 资源**。
+`WXT`（MV3 框架）+ React 18 + TypeScript + Tailwind CSS + `zustand`（persist → `chrome.storage.local`）+ `zod`（工具参数与输出契约校验）；pnpm；测试 `vitest` + Playwright（加载解包扩展）+ `pnpm eval` 评测套件；文本抽取 `pdfjs-dist` / `mammoth` / `xlsx`。图标一律内联 SVG（Lucide 风格，参照原型 symbol 表），**禁止 emoji 当图标、禁止外链 CDN 资源**。
 
 ## 回复语言
 

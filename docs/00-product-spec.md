@@ -86,21 +86,19 @@ interface ReportRecord { id: string; kind: 'daily'|'weekly'|'monthly'; content: 
 
 `src/assets/tools.json`，路由器**只能**从中选择。Schema：`{id, name, url, registerNote, categories: TaskType[], strengths, priceNote}`。初始条目（URL 执行时逐一核验，失效就替换或删）：豆包 doubao.com、DeepSeek chat.deepseek.com、Kimi kimi.com、通义千问 tongyi.com、文心一言 yiyan.baidu.com、秘塔搜索 metaso.cn、通义听悟 tingwu.aliyun.com、飞书妙记 feishu.cn、WPS AI ai.wps.cn、讯飞星火 xinghuo.xfyun.cn、即梦 jimeng.jianying.com、可灵 klingai.com、剪映 jianying.com、Gamma gamma.app、DeepL deepl.com、沉浸式翻译 immersivetranslate.com。
 
-## 6. LLM 层
+## 6. 智能体层（机制 SSOT = `docs/02-agent-architecture.md`）
 
-`llmClient`：OpenAI 兼容 `POST /chat/completions`（SSE 流式）+ JSON 输出助手（response_format 或提示词约束+解析重试 1 次）+ 错误分类：401/403（key 错→引导回设置）、429（额度/限流→提示充值或稍后）、超时/网络（重试 1 次再报）。**mock 模式**：`VITE_PAIHUO_MOCK=1` 时全部角色返回 `src/mocks/` fixtures（拆解 fixture 用原型里的发布会四任务剧本）。
+**所有 LLM 能力经统一 harness 运行**（agent loop + 工具编排 + 提示词装配 + 上下文管理 + trace + evals），UI 组件禁止裸调接口；传输层为 OpenAI 兼容 SSE（background 代发），mock 模式 `VITE_PAIHUO_MOCK=1` 读 `src/mocks/` fixtures（拆解 fixture 用原型的发布会四任务剧本）。本节只定义四个 **Agent Profile 的行为契约**（人设 + 输出 schema）——执行中可迭代提示词，契约不许变；工具白名单与机制细节见 arch §2。
 
-四个提示词角色（系统提示词初版，执行中可迭代但保持输出 schema 不变）：
-
-### 6.1 拆解器 decompose
-输入：原话 + 附件文本 + 现有未完成任务摘要。输出 JSON：`{tasks: Task草稿[], groups: Group[], relates: {aIds: string[], reason, suggestion}[]}`。
-系统提示词要点：你是给"不会用 AI 的职场人"服务的任务拆解专家；把口语化指派拆成**可交付**的任务（标题=动词开头的交付物）；逐条判断 fit 三档（宁保守不吹牛：AI 只能起草的算 assist）；type 五选一；从【工具目录】（随消息注入 JSON）里选 toolId，选不出就留空并把 fit 降为 self；为每条写提示词——**用户只填空**：把用户必须补的信息写成【一句话说明，如：…】空槽，提示词必须包含角色、任务、格式要求、语气约束；fit=self 的写一条可直接发出的小抄（催办/协调消息）；估 saveMin（保守）；due 从原文提取，提不出留空。
-### 6.2 整理器 organize
-新倒活时随拆解一并执行（同一次调用返回 relates）；另在任务状态变化后按需调用。职责：发现「同一交付物/同一活动/同一数据源」的任务，给出合并推进建议（一句话，口语）。
-### 6.3 陪聊 companion（function calling）
-工具：`update_status(id, status)`、`add_task(草稿)`、`explain_task(id)`（返回 3 步以内的做法教学）、`regenerate_prompt(id, feedback)`、`list_tasks(filter)`。人设：靠谱同事小派——说人话、短句、先给结论、适度幽默、绝不说教；完成时先确认划掉再建议下一件（优先 fit=full 的）；教做法永远给 3 步以内。
-### 6.4 汇报器 report
-输入：时段内任务记录（done/doing + 时间戳）+ 可选模板文本 + 用户称呼/部门。无模板时默认结构：日报【今日完成/进行中/需协调/明日计划】、周报【本周成果/进行中/数据/风险与求助/下周计划】、月报【本月摘要/重点产出/下月目标】；有模板时**严格套模板的标题层级与口径**。风格：给领导看的——量化、结论先行、不堆形容词。
+### 6.1 拆解官 decomposer
+输入：原话 + 附件（经 `read_attachment` 分块）+ 现有未完成任务快照。输出契约 JSON：`{tasks: Task草稿[], groups: Group[], relates: {aIds: string[], reason, suggestion}[]}`。
+行为要点：把口语化指派拆成**可交付**任务（标题=动词开头的交付物）；fit 三档宁保守不吹牛（AI 只能起草的算 assist）；type 五选一；toolId 必须来自 `search_tool_catalog` 结果，选不出留空并降为 self；每条配外部提示词（`draft_user_prompt`）——**用户只填空**，必补信息写成【…】高亮空槽，含角色/任务/格式/语气四段；fit=self 给可直接发出的小抄；saveMin 保守估；due 提不出留空。
+### 6.2 整理官 organizer
+事件触发（dump.created 随拆解链、task.completed 轻量检查）。职责：发现「同一交付物/同一活动/同一数据源」的任务，产出合并推进建议（一句话，口语）；自动 run 只产建议，不动数据、不碰 ui 工具。
+### 6.3 小派 orchestrator（主对话）
+harness 全工具白名单（除自动触发限制），核心 `list_tasks / get_task / update_task / complete_task / create_tasks / draft_user_prompt / draft_message / remember / recall / reveal_card / open_tool_site / dispatch`。人设：靠谱同事小派——说人话、短句、先给结论、适度幽默、绝不说教；汇报完成→先确认划掉再建议下一件（优先 fit=full）；教做法永远 3 步以内；重活委派给拆解官/汇报官（dispatch）。
+### 6.4 汇报官 reporter
+输入：`query_task_history(range)` + 工作日志 + 可选模板文本 + 用户称呼/部门。无模板默认结构：日报【今日完成/进行中/需协调/明日计划】、周报【本周成果/进行中/数据/风险与求助/下周计划】、月报【本月摘要/重点产出/下月目标】；有模板**严格套模板层级与口径**。风格：给领导看的——量化、结论先行、不堆形容词。
 
 ## 7. 右键收集与快捷键
 
