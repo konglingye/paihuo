@@ -46,8 +46,9 @@
 - [x] **T06 Agent Loop**（arch §1）：多轮工具调用循环、maxTurns/每轮工具数/token 上限护栏、空转检测、结构化输出契约（zod 校验+1 次修复重试+降级路径）、AbortController、Trace 记录（arch §6 数据结构）。
   DoD：vitest 用脚本化 mock LLM 断言：多轮工具链、超轮次兜底、契约修复、中断、trace 完整性。
   ✅ 2026-07-04 验证方式：为让 loop 真正能调用工具，先扩展 `src/llm/transport.ts` 支持 OpenAI 风格 `tools`/流式 `tool_calls` 累积解析（5 个新用例，含跨分片累积、并发多 tool_calls 不串号）；`src/agents/harness/budget.ts`（token 估算、默认预算常量、空转判定）+ `llmDriver.ts`（把 client 包成 loop 用的 `LlmDriver`，工具参数 JSON 解析失败优雅降级）均 TDD 先测后写；`src/agents/harness/loop.ts` 实现 `runAgent`：多轮工具链、每轮工具数截断、连续两轮空转强制收尾、超 maxTurns 兜底 bailout、结构化输出契约校验失败重试 1 次再失败走 fallback/bailout、401 不重试直接终止/429 退避重试 1 次、AbortSignal 检测、`trace.ts` 记录逐轮 assistantText/toolCalls/usage/durationMs；14 个用例覆盖 DoD 全部场景，一次性全绿；`pnpm test`（19 文件 121 用例）/`pnpm compile`/`pnpm build` 全绿。
-- [ ] **T07 上下文管理器**（arch §3）：token 估算、状态快照块（任务板一行一任务）、附件摘录+`read_attachment` 分块、历史窗口+滚动摘要压缩。
+- [x] **T07 上下文管理器**（arch §3）：token 估算、状态快照块（任务板一行一任务）、附件摘录+`read_attachment` 分块、历史窗口+滚动摘要压缩。
   DoD：vitest：超预算触发压缩且未决事项保留（压缩 eval fixture）；快照块随 store 变化。
+  ✅ 2026-07-04 验证方式：`src/agents/harness/context.ts` 实现状态快照块（任务一行一条，不含完整 JSON，测试验证随 tasksStore 增删改实时变化）、附件摘录（首 1k 字+附件名，超长提示走 read_attachment）、`CalibratedEstimator`（chars/1.6 启发式 + usage 校准滑动平均）、`needsCompression`/`compressHistory`（会话历史 8k 预算、超预算时把最老一段交给注入的 summarize 函数、保留最近≥6 轮原文不动、压缩 eval fixture 验证"未决事项"信息经摘要保留且压缩后不再超预算）；`src/agents/tools/content.ts` 落地 `read_attachment`（按 2000 字分块翻页，含附件文本拼接，chunk 越界报错），10+7 共 17 个用例全绿；`pnpm test`（21 文件 138 用例）/`pnpm compile`/`pnpm build` 全绿。get_prompt_template/draft_user_prompt/draft_message 留给 T10 补齐同一个 content.ts。
 - [ ] **T08 提示词装配器**（arch §4）：六块模板（identity/tool-policy/state/contract/style/memory）+ 四个 profile 的块组合与参数；快照测试锁定；`#/trace` dev 页（run 列表+逐轮展开）。
   DoD：`pnpm test` 快照绿；mock 下手动跑一次 decomposer run，在 `#/trace` 能看到完整装配与逐轮记录。
 
