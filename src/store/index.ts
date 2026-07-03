@@ -6,5 +6,6 @@ export type { TaskDraft } from './tasksStore';
 export { useFragmentsStore } from './fragmentsStore';
 export { useGroupsStore } from './groupsStore';
 export { useReportsStore } from './reportsStore';
+export { useRelationsStore } from './relationsStore';
 export { useUiStore } from './uiStore';
 export type { ActiveTab, TaskFilter } from './uiStore';

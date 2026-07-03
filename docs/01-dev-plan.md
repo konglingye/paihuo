@@ -40,8 +40,9 @@
 
 ### M1 Harness 核心（arch §1-§4，本里程碑是整个项目的心脏）
 
-- [ ] **T05 工具注册与执行器**（arch §2）：ToolRegistry（zod schema→JSON Schema、effect 分级、confirm 门）、ToolExecutor（read 并行/write 串行/超时/结构化错误）；先落任务库 7 个工具 + `search_tool_catalog`。
+- [x] **T05 工具注册与执行器**（arch §2）：ToolRegistry（zod schema→JSON Schema、effect 分级、confirm 门）、ToolExecutor（read 并行/write 串行/超时/结构化错误）；先落任务库 7 个工具 + `search_tool_catalog`。
   DoD：vitest 覆盖每个工具的 schema 校验、handler、错误路径、并行/串行策略。
+  ✅ 2026-07-04 验证方式：`src/agents/harness/tools.ts` 实现 ToolRegistry（zod→JSON Schema 用 zod v4 原生 `toJSONSchema`）+ `executeToolCalls`（连续 read 批量并行/write 严格串行、ui/external 默认拒绝需 `allowUiExternal`、超时、未知工具、schema 校验失败、handler 抛错均归为结构化错误不炸 run），13 个用例含计时断言验证并行/串行策略；新增 `relationsStore`（`link_tasks` 落点，TDD 4 用例）；`src/agents/tools/tasks.ts` 落地 7 个任务库工具（list/get/create/update/complete_task + group_tasks + link_tasks），16 个用例覆盖 schema/handler/错误路径；`src/agents/tools/catalog.ts` + `src/assets/tools.json` 种子目录（3 条，完整 16 项清单与 URL 核验留给 T12）实现 `search_tool_catalog`，6 个用例覆盖类型过滤/关键词排序/空结果/封闭目录约束；`pnpm test`（16 文件 91 用例）/`pnpm compile`/`pnpm build` 全绿。
 - [ ] **T06 Agent Loop**（arch §1）：多轮工具调用循环、maxTurns/每轮工具数/token 上限护栏、空转检测、结构化输出契约（zod 校验+1 次修复重试+降级路径）、AbortController、Trace 记录（arch §6 数据结构）。
   DoD：vitest 用脚本化 mock LLM 断言：多轮工具链、超轮次兜底、契约修复、中断、trace 完整性。
 - [ ] **T07 上下文管理器**（arch §3）：token 估算、状态快照块（任务板一行一任务）、附件摘录+`read_attachment` 分块、历史窗口+滚动摘要压缩。

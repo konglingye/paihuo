@@ -79,3 +79,12 @@ export const ReportRecordSchema = z.object({
   createdAt: z.number(),
 });
 export type ReportRecord = z.infer<typeof ReportRecordSchema>;
+
+/** 整理官/小派用 link_tasks 记录的任务关联，供「关联横幅」等场景使用（spec §6.2） */
+export const RelationSchema = z.object({
+  id: z.string(),
+  taskIds: z.array(z.string()).min(2),
+  reason: z.string(),
+  createdAt: z.number(),
+});
+export type Relation = z.infer<typeof RelationSchema>;

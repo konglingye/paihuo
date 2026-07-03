@@ -1,0 +1,29 @@
+[
+  {
+    "id": "deepseek",
+    "name": "DeepSeek",
+    "url": "https://chat.deepseek.com",
+    "registerNote": "手机号注册，免费用",
+    "categories": ["write", "data", "comm", "misc"],
+    "strengths": "推理能力强，适合起草文案、拆解数据",
+    "priceNote": "有免费额度"
+  },
+  {
+    "id": "doubao",
+    "name": "豆包",
+    "url": "https://www.doubao.com",
+    "registerNote": "手机号登录",
+    "categories": ["write", "comm", "misc"],
+    "strengths": "中文对话流畅，上手快",
+    "priceNote": "免费"
+  },
+  {
+    "id": "gamma",
+    "name": "Gamma",
+    "url": "https://gamma.app",
+    "registerNote": "邮箱注册",
+    "categories": ["slide"],
+    "strengths": "一句话生成 PPT 大纲和排版",
+    "priceNote": "有免费额度"
+  }
+]
