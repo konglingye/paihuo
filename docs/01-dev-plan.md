@@ -25,8 +25,9 @@
 
 ### M0 地基
 
-- [ ] **T01 脚手架**：pnpm+WXT+React18+TS+Tailwind+zod；`entrypoints/sidepanel`；manifest 权限按 spec §2。
+- [x] **T01 脚手架**：pnpm+WXT+React18+TS+Tailwind+zod；`entrypoints/sidepanel`；manifest 权限按 spec §2。
   DoD：Chrome 加载后侧边栏渲染三 tab 壳；`pnpm build` 零报错。
+  ✅ 2026-07-04 验证方式：`pnpm build` 零报错；`pnpm test`（vitest）App 组件冒烟测试通过；用 Playwright 启动真实 Chromium 加载 `.output/chrome-mv3` 解包扩展，直接访问 `sidepanel.html` 截图确认总览/活儿/汇报三 tab 渲染且切换正常，截图存 `docs/qa/T01-sidepanel-*.png`。
 - [ ] **T02 设计令牌与基础组件**：原型 `:root` 迁入 Tailwind；Button/Pill/Chip/Card/SegmentedTabs/Sheet/Toast/进度环 + 内联 SVG 图标表。
   DoD：dev-only `/components` 页与原型逐块目测一致，截图存 `docs/qa/`。
 - [ ] **T03 数据层**：zustand stores（settings/tasks/fragments/groups/reports/ui）+ persist(chrome.storage.local) + schemaVersion 迁移；模型按 spec §4。
