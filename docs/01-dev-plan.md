@@ -34,8 +34,9 @@
 - [x] **T03 数据层**：zustand stores（settings/tasks/fragments/groups/reports/ui）+ persist(chrome.storage.local) + schemaVersion 迁移；模型按 spec §4。
   DoD：vitest 覆盖 CRUD/roundtrip/迁移，绿。
   ✅ 2026-07-04 验证方式：`src/store/schema.ts` 按 spec §4 建 zod schema+类型；`src/store/storage.ts` 适配 `chrome.storage.local`（`wxt/testing` 的 `fakeBrowser` 驱动测试）；六个 store（settings/tasks/fragments/groups/reports 走 persist，ui 为纯瞬态不落盘）均 TDD 先写测试再实现；`pnpm test` 8 个文件 34 个用例全绿，覆盖 CRUD、"模拟重启扩展"式 persist roundtrip、以及 tasksStore 的 schemaVersion 0→1 迁移（`savedMinutes`→`saveMin` 改名）；`pnpm compile` 与 `pnpm build` 均零报错。
-- [ ] **T04 LLM 传输层**：OpenAI 兼容 SSE 流式（经 background service worker 代发解 CORS）、AbortSignal、错误分类（401/429/超时）、usage 采集；mock 通道读 `src/mocks/` fixtures（含流式分片模拟）。
+- [x] **T04 LLM 传输层**：OpenAI 兼容 SSE 流式（经 background service worker 代发解 CORS）、AbortSignal、错误分类（401/429/超时）、usage 采集；mock 通道读 `src/mocks/` fixtures（含流式分片模拟）。
   DoD：vitest 本地 mock server 断言流式/中断/各错误路径。
+  ✅ 2026-07-04 验证方式：`src/llm/transport.ts`（真实 SSE 解析+超时+中断+401/429/未知错误分类）用 Node `http` 本地起 mock server 测试，含跨 write 分包解析；`src/mocks/llm/`（fixtures+分片模拟 mockTransport）与 transport 同接口可互换；`src/llm/protocol.ts`+`background-bridge.ts`+`realTransport.ts` 实现 port 转发协议，用内存假 port 对（还原 chrome.runtime.Port 的 disconnect 语义）端到端测试 start/delta/usage/done/error/abort/并发多请求不串号；`src/llm/client.ts` 按 `VITE_PAIHUO_MOCK` 分流 mock/real；`entrypoints/background.ts` 接入 `registerLlmBackgroundBridge()`；`pnpm test`（12 文件 52 用例）/`pnpm compile`/`pnpm build` 全绿，并用 Playwright 加载真实解包扩展确认 background service worker 启动无报错、侧边栏三 tab 仍正常渲染。
 
 ### M1 Harness 核心（arch §1-§4，本里程碑是整个项目的心脏）
 
