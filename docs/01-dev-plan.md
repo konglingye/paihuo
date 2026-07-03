@@ -31,8 +31,9 @@
 - [x] **T02 设计令牌与基础组件**：原型 `:root` 迁入 Tailwind；Button/Pill/Chip/Card/SegmentedTabs/Sheet/Toast/进度环 + 内联 SVG 图标表。
   DoD：dev-only `/components` 页与原型逐块目测一致，截图存 `docs/qa/`。
   ✅ 2026-07-04 验证方式：`src/styles/tokens.css` 迁入原型 `:root` 令牌（Tailwind v4 `@theme`）；`src/components/ui` 落地 8 个基础组件 + `src/components/icons` 原样迁入原型 24 个 `<symbol>` 图标表；`entrypoints/components`（unlisted-page）逐块渲染，`pnpm build` 后用 Playwright 加载真实解包扩展访问 `components.html` 截图逐块比对原型（颜色/圆角/阴影/间距一致），交互验证 Sheet 开合与 Toast 触发，截图存 `docs/qa/T02-components-*.png`；过程中发现并修复一个真实 bug——两个 entrypoint 各自的同内容 CSS 文件被 Vite 去重后文件名不一致导致 `components.html` 引用的 CSS 404（图标退化成实心黑色大图标），改为两个入口共享同一个 `src/styles/global.css` 模块后修复。
-- [ ] **T03 数据层**：zustand stores（settings/tasks/fragments/groups/reports/ui）+ persist(chrome.storage.local) + schemaVersion 迁移；模型按 spec §4。
+- [x] **T03 数据层**：zustand stores（settings/tasks/fragments/groups/reports/ui）+ persist(chrome.storage.local) + schemaVersion 迁移；模型按 spec §4。
   DoD：vitest 覆盖 CRUD/roundtrip/迁移，绿。
+  ✅ 2026-07-04 验证方式：`src/store/schema.ts` 按 spec §4 建 zod schema+类型；`src/store/storage.ts` 适配 `chrome.storage.local`（`wxt/testing` 的 `fakeBrowser` 驱动测试）；六个 store（settings/tasks/fragments/groups/reports 走 persist，ui 为纯瞬态不落盘）均 TDD 先写测试再实现；`pnpm test` 8 个文件 34 个用例全绿，覆盖 CRUD、"模拟重启扩展"式 persist roundtrip、以及 tasksStore 的 schemaVersion 0→1 迁移（`savedMinutes`→`saveMin` 改名）；`pnpm compile` 与 `pnpm build` 均零报错。
 - [ ] **T04 LLM 传输层**：OpenAI 兼容 SSE 流式（经 background service worker 代发解 CORS）、AbortSignal、错误分类（401/429/超时）、usage 采集；mock 通道读 `src/mocks/` fixtures（含流式分片模拟）。
   DoD：vitest 本地 mock server 断言流式/中断/各错误路径。
 
