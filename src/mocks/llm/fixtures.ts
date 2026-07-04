@@ -58,7 +58,7 @@ const DECOMPOSER_LAUNCH_EVENT_OUTPUT = {
       title: '发布会 PPT：给经销商讲渠道政策',
       type: 'slide',
       fit: 'assist',
-      toolId: 'gamma',
+      toolId: 'aippt',
       prompt:
         '你是资深渠道运营。帮我出一份"下半年渠道政策宣讲"PPT 大纲，听众是经销商，场合是下周一的新品发布会。\n背景：【一句话说清产品和这次政策变化，如：返点调整 / 订货激励】\n要求：10 页以内；每页给标题 + 3 个要点 + 一句演讲提示。',
       groupId: 'g1',

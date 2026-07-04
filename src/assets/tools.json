@@ -117,22 +117,22 @@
     "priceNote": "部分功能需会员"
   },
   {
-    "id": "gamma",
-    "name": "Gamma",
-    "url": "https://gamma.app",
-    "registerNote": "邮箱注册",
+    "id": "aippt",
+    "name": "AiPPT",
+    "url": "https://www.aippt.cn",
+    "registerNote": "手机号注册",
     "categories": ["slide"],
-    "strengths": "一句话生成 PPT 大纲和排版",
+    "strengths": "一句话生成 PPT 大纲和排版，国产 AI-PPT 工具",
     "priceNote": "有免费额度"
   },
   {
-    "id": "deepl",
-    "name": "DeepL",
-    "url": "https://www.deepl.com",
+    "id": "youdao",
+    "name": "有道翻译",
+    "url": "https://fanyi.youdao.com",
     "registerNote": "免注册可直接用网页版",
     "categories": ["write", "misc"],
-    "strengths": "翻译质量业内公认top，尤其是欧洲语言",
-    "priceNote": "免费额度较大"
+    "strengths": "网易出品，翻译质量稳定，中文场景准确度高",
+    "priceNote": "免费"
   },
   {
     "id": "immersive-translate",

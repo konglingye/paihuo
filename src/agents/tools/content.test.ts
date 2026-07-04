@@ -79,8 +79,8 @@ describe('get_prompt_template', () => {
   });
 
   it('传已知 toolId 时把工具名带进角色段', async () => {
-    const result = await getPromptTemplateTool.handler({ taskType: 'slide', toolId: 'gamma' });
-    expect(result.role).toContain('Gamma');
+    const result = await getPromptTemplateTool.handler({ taskType: 'slide', toolId: 'aippt' });
+    expect(result.role).toContain('AiPPT');
   });
 
   it('toolId 不在目录内时优雅降级为通用骨架，不报错', async () => {
@@ -103,10 +103,10 @@ describe('draft_user_prompt', () => {
 
   it('给已存在的任务生成外部提示词', async () => {
     const [task] = useTasksStore.getState().addTasks([
-      { title: '发布会 PPT', type: 'slide', fit: 'assist', toolId: 'gamma', saveMin: 90, fragmentId: 'f1' },
+      { title: '发布会 PPT', type: 'slide', fit: 'assist', toolId: 'aippt', saveMin: 90, fragmentId: 'f1' },
     ]);
     const result = await draftUserPromptTool.handler({ taskId: task.id });
-    expect(result.prompt).toContain('Gamma');
+    expect(result.prompt).toContain('AiPPT');
     expect(result.prompt).toContain('【');
   });
 

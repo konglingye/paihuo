@@ -21,7 +21,7 @@ describe('search_tool_catalog', () => {
 
   it('按关键词匹配名字/长处，命中的排在前面，没命中的不出现', async () => {
     const result = await searchToolCatalogTool.handler({ query: 'PPT' });
-    expect(result.map((entry) => entry.id)).toContain('gamma');
+    expect(result.map((entry) => entry.id)).toContain('aippt');
     expect(result.every((entry) => entry.name.toLowerCase().includes('ppt') || entry.strengths.toLowerCase().includes('ppt'))).toBe(true);
   });
 
@@ -32,12 +32,12 @@ describe('search_tool_catalog', () => {
 
   it('真模型会发自然语言短句而不是单个关键词——多词查询要按词匹配，不能要求整句都是子串（T24 真模型冒烟发现的真实 bug：真实调用返回全是空数组）', async () => {
     const result = await searchToolCatalogTool.handler({ query: 'PPT 渠道政策 经销商 发布会', taskType: 'slide' });
-    expect(result.map((entry) => entry.id)).toContain('gamma');
+    expect(result.map((entry) => entry.id)).toContain('aippt');
   });
 
   it('多词查询里只要有一个词命中就该出现在结果里', async () => {
     const result = await searchToolCatalogTool.handler({ query: '翻译 客户英文邮件 商务信函' });
-    expect(result.map((entry) => entry.id)).toContain('deepl');
+    expect(result.map((entry) => entry.id)).toContain('youdao');
   });
 
   it('结果只可能来自封闭目录内的 id，不会凭空产出目录之外的工具', async () => {
