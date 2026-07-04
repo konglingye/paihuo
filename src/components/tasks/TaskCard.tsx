@@ -4,15 +4,8 @@ import { Icon } from '@/src/components/icons/Icon';
 import { Pill, Button, useToast } from '@/src/components/ui';
 import { useTasksStore, useUiStore } from '@/src/store';
 import { cn } from '@/src/lib/cn';
+import { TYPE_LABELS } from './taskTypeMeta';
 import type { Task } from '@/src/store/schema';
-
-const TYPE_LABELS: Record<Task['type'], string> = {
-  write: '写作',
-  slide: '演示',
-  data: '数据',
-  comm: '沟通',
-  misc: '杂事',
-};
 
 const FIT_LABELS: Record<Task['fit'], string> = {
   full: 'AI 可代劳',

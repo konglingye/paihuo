@@ -4,6 +4,7 @@ import { Icon } from '@/src/components/icons/Icon';
 import { useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
 import { SettingsSheet } from '@/src/components/settings/SettingsSheet';
 import { DumpPanel } from '@/src/components/dump/DumpPanel';
+import { OverviewPanel } from '@/src/components/overview/OverviewPanel';
 import { ToastProvider } from '@/src/components/ui';
 import { ChatDock } from '@/src/components/chat/ChatDock';
 import { ChatSheet } from '@/src/components/chat/ChatSheet';
@@ -70,7 +71,7 @@ function App() {
           ))}
         </nav>
         <main className={`flex-1 overflow-y-auto ${activeTab !== 'report' ? 'pb-24' : ''}`}>
-          {activeTab === 'overview' && <div className="p-4">总览面板占位</div>}
+          {activeTab === 'overview' && <OverviewPanel />}
           {activeTab === 'jobs' && <DumpPanel />}
           {activeTab === 'report' && <div className="p-4">汇报面板占位</div>}
         </main>

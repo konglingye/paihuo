@@ -1,17 +1,8 @@
 import { useMemo } from 'react';
 import { Chip } from '@/src/components/ui';
+import { TYPE_LABELS, TYPE_ORDER } from './taskTypeMeta';
 import type { TaskFilter } from '@/src/store/uiStore';
 import type { Task, TaskType } from '@/src/store/schema';
-
-const TYPE_LABELS: Record<TaskType, string> = {
-  write: '写作',
-  slide: '演示',
-  data: '数据',
-  comm: '沟通',
-  misc: '杂事',
-};
-
-const TYPE_ORDER: TaskType[] = ['write', 'slide', 'data', 'comm', 'misc'];
 
 export interface TypeFilterRowProps {
   tasks: Task[];
