@@ -23,15 +23,29 @@ export function buildStateSnapshotBlock(tasks: Task[]): string {
     .join('\n');
 }
 
-/** Fragment 只注入首 1k 字摘录 + 元信息，长文档由模型用 read_attachment 分块翻页（arch §3.1） */
+/**
+ * Fragment 只注入首 1k 字摘录 + 元信息，长文档/附件全文由模型用 read_attachment 分块翻页（arch §3.1）。
+ * read_attachment 的 fragmentId 参数认的是这个 fragment 自己的 id（附件文本本来就是跟原文一起
+ * 存在同一个 fragment 里的，见 content.ts 的 fullTextOf），必须把这个 id 明说给模型——
+ * T24 真模型冒烟实测：只提附件文件名不给 id，模型会拿文件名当 fragmentId 硬传，
+ * 六轮全部「片段不存在」，最后 bailout 交不出任何结果。
+ */
 export function excerptFragment(fragment: Fragment): string {
   const truncated = fragment.raw.length > EXCERPT_CHARS;
   const excerpt = fragment.raw.slice(0, EXCERPT_CHARS);
-  const attachmentNote = fragment.attachments.length
+  const hasAttachments = fragment.attachments.length > 0;
+  const attachmentNote = hasAttachments
     ? `\n附件：${fragment.attachments.map((a) => a.name).join('、')}`
     : '';
-  const truncateNote = truncated ? '\n…（已截断，完整内容用 read_attachment 分块读取）' : '';
-  return `${excerpt}${truncateNote}${attachmentNote}`;
+  let readNote = '';
+  if (truncated && hasAttachments) {
+    readNote = `\n…（原文已截断；原文全文和附件内容都用 read_attachment(fragmentId="${fragment.id}") 从 chunk=0 开始分块读取）`;
+  } else if (truncated) {
+    readNote = `\n…（已截断，完整内容用 read_attachment(fragmentId="${fragment.id}") 分块读取）`;
+  } else if (hasAttachments) {
+    readNote = `\n（附件内容用 read_attachment(fragmentId="${fragment.id}") 分块读取，从 chunk=0 开始）`;
+  }
+  return `${excerpt}${attachmentNote}${readNote}`;
 }
 
 /**

@@ -115,7 +115,9 @@
 
 ### 停点（必须先问用户）
 
-- [ ] **T24 ⛔ 真 key 冒烟 + 真模型评测**：要 DeepSeek key → 真模型跑 e2e 主链路 + `pnpm eval` 真模型档，人工过一遍输出记分，迭代提示词（契约不变）。
+- [x] **T24 ⛔ 真 key 冒烟 + 真模型评测**：要 DeepSeek key → 真模型跑 e2e 主链路 + `pnpm eval` 真模型档，人工过一遍输出记分，迭代提示词（契约不变）。
+  DoD：真模型下四个 profile 都跑通，发现的问题已修复或记录，契约不变。
+  ✅ 2026-07-05 验证方式：用户提供真实 DeepSeek key（本地测试，未提交仓库，会话结束已销毁）；新增 `evals/real-model.manual.test.ts` + `vitest.eval.real.config.ts` + `pnpm eval:real`（复用 decomposerGoldens 金标准输入，换真实 API 跑拆解官/整理官/小派/汇报官全部四个 profile，不设 `PAIHUO_REAL_API_KEY` 时全部用例自动跳过，不进 `pnpm test`/`pnpm eval`/CI）。首轮真模型跑通后发现并修复两个真实代码 bug：① `src/agents/tools/catalog.ts` 的 `search_tool_catalog` 用整句去匹配 name/strengths 短字段，单测凑巧用单关键词能过，但真模型发的是"PPT 渠道政策 经销商 发布会"这种自然语言短句，整句匹配几乎必然落空——实测真实调用返回的搜索结果清一色是空数组，直接导致拆解官把几乎所有任务的 fit 判成 self、toolId 全部留空，废掉了产品"AI 能帮多少"的核心价值主张；改成按词切分、任一词命中就计分，2 个新单测覆盖真实多词查询场景，修复后同一输入 4/4 任务正确产出 full/assist + 合理 toolId + 带【】空槽的提示词。② `src/agents/harness/context.ts` 的 `excerptFragment` 只把附件文件名塞进提示词，从没告诉模型 `read_attachment` 该传的 `fragmentId` 其实是 fragment 自己的 id——模型只能拿文件名瞎猜，六轮全部"片段不存在"直接 bailout 交不出结果；改成截断/有附件时都显式带上 `fragment.id`，2 个新单测覆盖，修复后模型第一次调用就传对参数、成功读到附件全文。第三处是提示词措辞微调（非 bug）：汇报官经常在报告正文前加"好的，我来写…"寒暄，`src/agents/profiles/reporter.ts` 风格块加规则禁止，deepseek-reasoner 复测 3/3 报告干净从标题开始；deepseek-chat（非推荐备选模型）偶发残留类似寒暄，判断是 reasoner 有独立 reasoning_content 通道承接内心戏而 chat 系列没有，记为已知模型差异不继续处理。全程未改动任何 zod 契约/工具签名/输出结构，符合"契约不变"要求。详细发现与验证记录见 `docs/qa/T24-real-model-eval.md`。`pnpm test`（58 文件 407 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）/`pnpm eval`（31 用例）/`pnpm e2e` 全绿。
 - [ ] **T25 ⛔ 商店上架**：Edge Add-ons 优先；素材/隐私声明/账号由用户定。
 
 ## 里程碑验收

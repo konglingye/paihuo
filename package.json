@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "eval": "vitest run --config vitest.eval.config.ts",
+    "eval:real": "vitest run --config vitest.eval.real.config.ts",
     "e2e": "VITE_PAIHUO_MOCK=1 wxt build && playwright test",
     "check:tools": "node scripts/check-tools.mjs",
     "postinstall": "wxt prepare"

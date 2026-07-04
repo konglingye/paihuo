@@ -24,10 +24,19 @@ export function findCatalogEntry(toolId: string): ToolCatalogEntry | undefined {
   return TOOL_CATALOG.find((entry) => entry.id === toolId);
 }
 
+/**
+ * 真模型发的是自然语言短句（如"PPT 渠道政策 经销商 发布会"），不是单个关键词——
+ * 按整句去匹配 name/strengths 这种短字段几乎不可能命中，T24 真 key 冒烟时实测
+ * search_tool_catalog 对每次真实调用都返回空数组，直接导致 fit 全线降级成 self。
+ * 改成按词切开、任一词命中就计分。
+ */
 function matchScore(entry: ToolCatalogEntry, query: string): number {
+  const terms = query.split(/[\s,，、]+/).filter(Boolean);
   let score = 0;
-  if (entry.name.toLowerCase().includes(query)) score += 2;
-  if (entry.strengths.toLowerCase().includes(query)) score += 1;
+  for (const term of terms) {
+    if (entry.name.toLowerCase().includes(term)) score += 2;
+    if (entry.strengths.toLowerCase().includes(term)) score += 1;
+  }
   return score;
 }
 

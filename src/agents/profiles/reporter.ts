@@ -64,7 +64,10 @@ export function buildReporterProfile(existingTasks: Task[], context: ReporterCon
       ]),
       state: buildStateBlock(existingTasks, buildReporterContextText(context)),
       contract: buildContractBlock(undefined),
-      style: buildStyleBlock(['给领导看的语气：量化、结论先行、不堆形容词']),
+      style: buildStyleBlock([
+        '给领导看的语气：量化、结论先行、不堆形容词',
+        '终局文本就是要发给领导的报告全文，不是聊天回复：不要开头加"好的，我来写…"这类寒暄或工具调用情况说明，也不要结尾加"如需补充请告知"这类客套话，第一个字符就是报告标题',
+      ]),
       memory: buildMemoryBlock(useMemoryStore.getState().profileText()),
     }),
   };

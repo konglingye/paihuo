@@ -67,7 +67,19 @@ describe('excerptFragment（附件摘录）', () => {
     const longText = '啊'.repeat(1500);
     const excerpt = excerptFragment({ id: 'f1', raw: longText, attachments: [], createdAt: 0 });
     expect(excerpt).toContain('read_attachment');
+    expect(excerpt).toContain('f1'); // 必须带 fragment 自己的 id，不然模型不知道 read_attachment 该传什么
     expect(excerpt.length).toBeLessThan(1200);
+  });
+
+  it('有附件时也要带 fragment 的 id（T24 真模型冒烟发现：只给附件名，模型会把文件名当成 fragmentId 传进 read_attachment，六轮都拿不到内容，直接 bailout）', () => {
+    const excerpt = excerptFragment({
+      id: 'real-frag-abc',
+      raw: '一段简短原文',
+      attachments: [{ name: '附件.txt' }],
+      createdAt: 0,
+    });
+    expect(excerpt).toContain('read_attachment');
+    expect(excerpt).toContain('real-frag-abc');
   });
 });
 
