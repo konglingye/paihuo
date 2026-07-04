@@ -5,6 +5,7 @@ import { AttachButton } from '@/src/components/attachments/AttachButton';
 import { useTasksStore } from '@/src/store';
 import { useReportTemplateStore } from '@/src/store/reportTemplateStore';
 import { useReportRun } from './useReportRun';
+import { MarkdownView } from './MarkdownView';
 import type { ReportKind } from '@/src/store/schema';
 
 const KIND_OPTIONS: { value: ReportKind; label: string }[] = [
@@ -105,8 +106,8 @@ export function ReportPanel() {
       {error && <p className="mt-2.5 rounded-lg bg-red-soft px-2.5 py-1.5 text-[11.5px] text-red">{error}</p>}
 
       {(text || busy) && (
-        <div className="mt-3 whitespace-pre-wrap rounded-xl border border-hairsoft bg-white p-3 text-[12px] leading-relaxed text-[#33373D] shadow-card">
-          {text || '…'}
+        <div className="mt-3 rounded-xl border border-hairsoft bg-white p-3 text-[12px] leading-relaxed text-[#33373D] shadow-card">
+          {text ? <MarkdownView text={text} /> : '…'}
         </div>
       )}
 
