@@ -79,6 +79,31 @@ describe('reporter profile', () => {
   it('低温快档', () => {
     expect(profile.params?.temperature).toBe(0.3);
   });
+
+  it('工具白名单是 query_task_history + read_template（spec §6.4 输入清单）', () => {
+    expect(profile.toolNames).toEqual(['query_task_history', 'read_template']);
+  });
+
+  it('没传 context 时，state 块里带"没有上传模板"的默认提示', () => {
+    expect(profile.systemPrompt).toContain('没有上传模板，按默认结构写');
+  });
+
+  it('传了 templateName 时，state 块提示改成"已上传模板"并指示先调 read_template', () => {
+    const withTemplate = buildReporterProfile(sampleTasks, { templateName: '公司周报模板.docx' });
+    expect(withTemplate.systemPrompt).toContain('已上传模板「公司周报模板.docx」');
+    expect(withTemplate.systemPrompt).toContain('先调 read_template 读取全文');
+  });
+
+  it('传了 worklogEntries/userName/org 时都会出现在 state 块里', () => {
+    const withContext = buildReporterProfile(sampleTasks, {
+      userName: '李哥',
+      org: '渠道部',
+      worklogEntries: [{ date: '2026-07-03', summary: '完成 2 件活儿，预计省时 60 分钟：写周报、催合同' }],
+    });
+    expect(withContext.systemPrompt).toContain('称呼：李哥');
+    expect(withContext.systemPrompt).toContain('部门：渠道部');
+    expect(withContext.systemPrompt).toContain('2026-07-03：完成 2 件活儿');
+  });
 });
 
 describe('orchestrator profile', () => {

@@ -5,6 +5,7 @@ import { useSettingsStore, useTasksStore, useUiStore, useWorklogStore } from '@/
 import { SettingsSheet } from '@/src/components/settings/SettingsSheet';
 import { DumpPanel } from '@/src/components/dump/DumpPanel';
 import { OverviewPanel } from '@/src/components/overview/OverviewPanel';
+import { ReportPanel } from '@/src/components/report/ReportPanel';
 import { ToastProvider } from '@/src/components/ui';
 import { ChatDock } from '@/src/components/chat/ChatDock';
 import { ChatSheet } from '@/src/components/chat/ChatSheet';
@@ -94,7 +95,7 @@ function App() {
         <main className={`flex-1 overflow-y-auto ${activeTab !== 'report' ? 'pb-24' : ''}`}>
           {activeTab === 'overview' && <OverviewPanel />}
           {activeTab === 'jobs' && <DumpPanel />}
-          {activeTab === 'report' && <div className="p-4">汇报面板占位</div>}
+          {activeTab === 'report' && <ReportPanel />}
         </main>
         {activeTab !== 'report' && (
           <ChatDock busy={chat.busy} onSend={(text) => { openChat(); void chat.send(text); }} />

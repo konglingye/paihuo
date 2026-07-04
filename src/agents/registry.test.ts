@@ -19,6 +19,8 @@ const BASE_TOOL_NAMES = [
   'open_tool_site',
   'remember',
   'recall',
+  'query_task_history',
+  'read_template',
 ];
 
 describe('createDefaultToolRegistry', () => {

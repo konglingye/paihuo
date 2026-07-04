@@ -108,6 +108,56 @@ function findTaskIdInSystemPrompt(messages: ChatMessage[], titleFragment: string
   return findTaskIdByTitleFragment(systemText, titleFragment);
 }
 
+/** system 提示词里有没有"已上传模板"提示（reporter.ts 的 buildReporterContextText 产出的那句） */
+function hasUploadedTemplate(messages: ChatMessage[]): boolean {
+  return messages.some((m) => m.role === 'system' && m.content.includes('已上传模板'));
+}
+
+/**
+ * 汇报官剧本通用形状（spec §6.4）：
+ * 第 1 步：调 query_task_history；第 2 步：没模板直接给默认结构文本，有模板则改调 read_template；
+ * 第 3 步：只有"有模板"分支会走到——read_template 结果已回来，给模板结构的文本。
+ */
+function reporterFixture(
+  id: string,
+  matchPhrase: string,
+  range: 'today' | 'week' | 'month',
+  defaultText: string,
+  templateText: string,
+): LlmFixture {
+  return {
+    id,
+    match: (msg) => msg.includes(matchPhrase),
+    steps: [
+      { toolCalls: [{ name: 'query_task_history', args: { range } }] },
+      {
+        toolCalls: (_msg, messages) => (hasUploadedTemplate(messages) ? [{ name: 'read_template', args: {} }] : []),
+        respond: (_msg, messages) => (hasUploadedTemplate(messages) ? [] : [defaultText]),
+      },
+      { chunks: [templateText] },
+    ],
+    usage: { promptTokens: 150, completionTokens: 120, totalTokens: 270 },
+  };
+}
+
+const REPORTER_DAILY_DEFAULT =
+  '【今日完成】\n1. 整理今天的会议纪要，下班前发群里\n\n【进行中】\n1. 发布会 PPT：给经销商讲渠道政策\n2. 发布会宣传文案，先出两版\n3. 汇总上季度各区域销售数据\n\n【需协调】\n（暂无）\n\n【明日计划】\n1. 上午定发布会三个关键信息，PPT 与宣传文案同步推进\n2. 销售数据汇总表出初版';
+
+const REPORTER_DAILY_TEMPLATE =
+  '# 日报\n## 完成事项\n- 整理今天的会议纪要，下班前发群里\n## 待办事项\n- 发布会 PPT、发布会宣传文案、销售数据汇总表\n## 备注\n（按公司模板格式输出，层级与默认结构不同）';
+
+const REPORTER_WEEKLY_DEFAULT =
+  '【本周成果】\n1. 整理今天的会议纪要，下班前发群里\n\n【进行中】\n1. 发布会 PPT：给经销商讲渠道政策\n2. 发布会宣传文案，先出两版\n3. 汇总上季度各区域销售数据\n\n【数据】\n本周完成 1 件；引入 AI 协助后节省约 40 分钟工时\n\n【下周计划】\n1. 周一交付发布会 PPT + 宣传文案两版\n2. 销售汇总表定稿并给出三条结论';
+
+const REPORTER_MONTHLY_DEFAULT =
+  '【本月摘要】\n围绕新品发布会与日常运营推进，重点产出：会议纪要机制化、渠道政策宣讲材料、发布会宣传物料。\n\n【重点产出】\n1. 整理今天的会议纪要，下班前发群里\n2. 发布会 PPT：给经销商讲渠道政策\n3. 发布会宣传文案，先出两版\n\n【下月目标】\n1. 发布会落地复盘\n2. 建立「AI 辅助工作」常规流程，沉淀提示词库';
+
+const REPORTER_WEEKLY_TEMPLATE =
+  '# 周报\n## 本周完成\n- 整理今天的会议纪要，下班前发群里\n## 下周安排\n- 发布会 PPT、宣传文案、销售汇总表\n## 备注\n（按公司模板格式输出，层级与默认结构不同）';
+
+const REPORTER_MONTHLY_TEMPLATE =
+  '# 月报\n## 本月摘要\n围绕新品发布会与日常运营推进\n## 下月目标\n- 发布会落地复盘\n- 建立 AI 辅助工作流程\n## 备注\n（按公司模板格式输出，层级与默认结构不同）';
+
 export const FIXTURES: LlmFixture[] = [
   {
     id: 'orchestrator-meeting-done',
@@ -177,6 +227,9 @@ export const FIXTURES: LlmFixture[] = [
     },
     usage: { promptTokens: 120, completionTokens: 60, totalTokens: 180 },
   },
+  reporterFixture('reporter-daily', '写一份日报', 'today', REPORTER_DAILY_DEFAULT, REPORTER_DAILY_TEMPLATE),
+  reporterFixture('reporter-weekly', '写一份周报', 'week', REPORTER_WEEKLY_DEFAULT, REPORTER_WEEKLY_TEMPLATE),
+  reporterFixture('reporter-monthly', '写一份月报', 'month', REPORTER_MONTHLY_DEFAULT, REPORTER_MONTHLY_TEMPLATE),
 ];
 
 export function findFixture(lastUserMessage: string): LlmFixture {

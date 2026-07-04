@@ -53,6 +53,16 @@ describe('提示词六块模板（快照锁定，改动需过 review diff）', (
     expect(buildStateBlock([])).toMatchSnapshot();
   });
 
+  it('state block 带 extra 时追加在任务板后面（供汇报官塞工作日志/用户信息用）', () => {
+    const result = buildStateBlock(sampleTasks, '# 用户信息\n称呼：李哥');
+    expect(result).toContain('# 当前任务板');
+    expect(result).toContain('# 用户信息\n称呼：李哥');
+  });
+
+  it('state block 不传 extra 时行为和以前一样', () => {
+    expect(buildStateBlock(sampleTasks, undefined)).toBe(buildStateBlock(sampleTasks));
+  });
+
   it('contract block 有描述', () => {
     expect(buildContractBlock('{tasks: [...], groups: [...], relates: [...]}')).toMatchSnapshot();
   });

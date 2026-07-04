@@ -91,8 +91,9 @@
 
 ### M5 报活
 
-- [ ] **T18 汇报官**：reporter profile（契约=spec §6.4）+ 模板上传解析注入 + 流式输出 + 复制/下载 .md + ReportRecord 落库；数据来自 `query_task_history` + 工作日志。
+- [x] **T18 汇报官**：reporter profile（契约=spec §6.4）+ 模板上传解析注入 + 流式输出 + 复制/下载 .md + ReportRecord 落库；数据来自 `query_task_history` + 工作日志。
   DoD：mock 下三种报告可生成、模板改变结构、下载内容正确。
+  ✅ 2026-07-04 验证方式：`buildStateBlock` 加可选 `extra` 参数（供追加工作日志/用户信息/模板提示，不传时行为不变，2 个新用例）；`reporter.ts` 工具白名单换成 `query_task_history`/`read_template`（原来占位的 `list_tasks` 退场），toolPolicy 写死三种报告默认结构+"读到模板必须严格套用"规则，`ReporterContext`（worklogEntries/userName/org/templateName）拼进 state 块，4 个新用例验证记忆块/模板提示/身份信息都能在 systemPrompt 里看到；`src/agents/tools/report.ts` 落地 `query_task_history`（按 today/week/month 圈定"完成"窗口，"进行中"不受时间范围限制，5 个用例）与 `read_template`（没上传时报错）；新增非持久化 `reportTemplateStore`（模板名字+全文，纯瞬态不落盘，3 个用例）；`runReport.ts` 封装 reporter run（outcome==='text' 才算成功，4 个用例）；mock fixture 升级——`reporterFixture` 工厂函数生成日报/周报/月报三档剧本，每档都是"先调 query_task_history，再按 system 提示词里有没有'已上传模板'分支：没有→直接给默认结构文本，有→改调 read_template 再给模板结构文本"，复用 T14 就有的多轮 step 机制无需改 mockTransport，6 个新用例覆盖两条分支+三档 range；`ReportPanel` 组件（分段控件+元信息统计+模板上传 chip+生成按钮+流式输出框+复制全文/下载 .md+底部说明），接入 `App.tsx` 替换占位（LLM 调用类组件延续 DumpPanel 先例——不写隔离的 RTL 单测，靠真实 Playwright 验证）。Playwright 用真实解包扩展验证：拆解出 4 个真实任务后汇报页元信息条显示"完成 0 件 · 进行中 4 件"；生成日报命中默认结构【今日完成】【进行中】；点"下载 .md"，读取下载文件内容与页面展示内容逐字节比对一致（不是假设，是真的读文件校验）；`chrome.storage.local` 里 `paihuo:reports` 确认 ReportRecord 已落库；上传模板 `.txt` 后重新生成，输出结构明显改变（从方括号小标题变成 `# 标题` 层级）且显示"已按模板「xxx」的结构组织"提示；周报/月报也各自生成成功；全程控制台无报错，截图存 `docs/qa/T18-*.png`；`pnpm test`（57 文件 396 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。
 
 ### M6 质量与收口
 

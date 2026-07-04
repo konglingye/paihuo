@@ -13,4 +13,6 @@ export { useMemoryStore } from './memoryStore';
 export type { MemoryFact } from './memoryStore';
 export { useWorklogStore, buildDailySummary } from './worklogStore';
 export type { WorklogEntry } from './worklogStore';
+export { useReportTemplateStore } from './reportTemplateStore';
+export type { ReportTemplate } from './reportTemplateStore';
 export { clearAllData } from './clearAllData';

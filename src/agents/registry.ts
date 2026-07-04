@@ -4,6 +4,7 @@ import { searchToolCatalogTool } from './tools/catalog';
 import { draftMessageTool, draftUserPromptTool, getPromptTemplateTool, readAttachmentTool } from './tools/content';
 import { uiTools } from './tools/ui';
 import { memoryTools } from './tools/memory';
+import { reportTools } from './tools/report';
 import { createDispatchTool, type DispatchToolDeps } from './tools/dispatch';
 
 /**
@@ -22,6 +23,7 @@ export function createDefaultToolRegistry(dispatchDeps?: Omit<DispatchToolDeps, 
     draftMessageTool,
     ...uiTools,
     ...memoryTools,
+    ...reportTools,
   ].forEach((tool) => registry.register(tool));
   if (dispatchDeps) {
     registry.register(createDispatchTool({ registry, ...dispatchDeps }));

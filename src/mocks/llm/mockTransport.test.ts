@@ -138,4 +138,101 @@ describe('mockStreamChatCompletion', () => {
     );
     expect(JSON.parse(result.content)).toEqual({ suggestions: [] });
   });
+
+  describe('汇报官 fixture（spec §6.4：query_task_history + 可选 read_template）', () => {
+    const noTemplateSystem = { role: 'system' as const, content: '# 模板\n没有上传模板，按默认结构写' };
+    const withTemplateSystem = {
+      role: 'system' as const,
+      content: '# 模板\n已上传模板「周报模板.docx」——写之前先调 read_template 读取全文，严格套用它的层级结构和措辞口径',
+    };
+
+    it('没有模板：第 1 步调 query_task_history(range=today)', async () => {
+      const result = await mockStreamChatCompletion(
+        {
+          baseUrl: 'mock://',
+          apiKey: '',
+          model: 'mock',
+          messages: [noTemplateSystem, { role: 'user', content: '写一份日报。' }],
+        },
+        {},
+      );
+      expect(result.toolCalls).toEqual([
+        { id: 'mock-tool-0-0', name: 'query_task_history', arguments: JSON.stringify({ range: 'today' }) },
+      ]);
+    });
+
+    it('没有模板：第 2 步（工具结果已回来）直接给默认结构文本，不再调工具', async () => {
+      const result = await mockStreamChatCompletion(
+        {
+          baseUrl: 'mock://',
+          apiKey: '',
+          model: 'mock',
+          messages: [
+            noTemplateSystem,
+            { role: 'user', content: '写一份日报。' },
+            { role: 'assistant', content: '', toolCalls: [{ id: 'c1', name: 'query_task_history', arguments: '{}' }] },
+            { role: 'tool', toolCallId: 'c1', content: '{}' },
+          ],
+        },
+        {},
+      );
+      expect(result.toolCalls).toBeUndefined();
+      expect(result.content).toContain('【今日完成】');
+    });
+
+    it('有模板：第 2 步改成调 read_template，不直接给文本', async () => {
+      const result = await mockStreamChatCompletion(
+        {
+          baseUrl: 'mock://',
+          apiKey: '',
+          model: 'mock',
+          messages: [
+            withTemplateSystem,
+            { role: 'user', content: '写一份日报。' },
+            { role: 'assistant', content: '', toolCalls: [{ id: 'c1', name: 'query_task_history', arguments: '{}' }] },
+            { role: 'tool', toolCallId: 'c1', content: '{}' },
+          ],
+        },
+        {},
+      );
+      expect(result.content).toBe('');
+      expect(result.toolCalls).toEqual([{ id: 'mock-tool-1-0', name: 'read_template', arguments: '{}' }]);
+    });
+
+    it('有模板：第 3 步（read_template 结果也回来了）给出模板结构的文本，跟默认结构明显不同', async () => {
+      const result = await mockStreamChatCompletion(
+        {
+          baseUrl: 'mock://',
+          apiKey: '',
+          model: 'mock',
+          messages: [
+            withTemplateSystem,
+            { role: 'user', content: '写一份日报。' },
+            { role: 'assistant', content: '', toolCalls: [{ id: 'c1', name: 'query_task_history', arguments: '{}' }] },
+            { role: 'tool', toolCallId: 'c1', content: '{}' },
+            { role: 'assistant', content: '', toolCalls: [{ id: 'c2', name: 'read_template', arguments: '{}' }] },
+            { role: 'tool', toolCallId: 'c2', content: '{}' },
+          ],
+        },
+        {},
+      );
+      expect(result.toolCalls).toBeUndefined();
+      expect(result.content).toContain('按公司模板格式输出');
+      expect(result.content).not.toContain('【今日完成】');
+    });
+
+    it('周报/月报也各自匹配到正确的 range', async () => {
+      const weekly = await mockStreamChatCompletion(
+        { baseUrl: 'mock://', apiKey: '', model: 'mock', messages: [noTemplateSystem, { role: 'user', content: '写一份周报。' }] },
+        {},
+      );
+      expect(weekly.toolCalls?.[0].arguments).toBe(JSON.stringify({ range: 'week' }));
+
+      const monthly = await mockStreamChatCompletion(
+        { baseUrl: 'mock://', apiKey: '', model: 'mock', messages: [noTemplateSystem, { role: 'user', content: '写一份月报。' }] },
+        {},
+      );
+      expect(monthly.toolCalls?.[0].arguments).toBe(JSON.stringify({ range: 'month' }));
+    });
+  });
 });
