@@ -94,8 +94,13 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
   const selectedIsNonReasoning =
     !!models && !!settings.model && !isReasoningModel(settings.model, preset?.reasoningWhitelist);
 
+  // 真实反馈的 bug：3 步向导内容天然就长（三步一起展示+模型列表），百分比高度（原型 92%）
+  // 在真实側边栏高度下会把弹窗自己的头部撑到盖住上面常驻的总览/活儿/汇报 tab 栏——这块区域
+  // 不是背景蒙层，是弹窗自己不透明的内容，点上去什么反应都没有，感觉像"关不掉"。用 calc 扣掉
+  // 顶部固定的 header+tab 栏高度（实测 92px，留 4px 余量取 96px），保证任何视口高度下弹窗都不会
+  // 盖到它们，用户始终能点到 tab 或者点弹窗外的蒙层退出去，不用非得精准点中右上角的关闭按钮
   return (
-    <Sheet open={open} onClose={onClose} title="接上 AI，只需 3 步" heightClassName="h-[92%]">
+    <Sheet open={open} onClose={onClose} title="接上 AI，只需 3 步" heightClassName="max-h-[calc(100%-96px)]">
       <div className="space-y-3 overflow-y-auto p-4">
         <p className="mb-1 text-[12.5px] leading-relaxed text-sub">
           用你自己的 API key——额度花在自己账上，数据只走你和 AI 平台之间。整个过程像注册个网盘：

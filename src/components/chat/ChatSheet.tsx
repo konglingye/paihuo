@@ -47,7 +47,9 @@ export function ChatSheet({ open, onClose, messages, busy, activity, onSend }: C
       title="小派"
       statusText={`在线 · 手里记着 ${openTaskCount} 件活儿`}
       avatar={<span className="orb orb-lg" aria-hidden="true" />}
-      heightClassName="h-[76%]"
+      // 固定高度（跟原型 .chat-sheet{height:76%} 一致，消息少也不缩小），但套一层 min()
+      // 保证任何视口高度下都不会盖住顶部常驻的 header+tab 栏（同 SettingsSheet 的问题和修法）
+      heightClassName="h-[min(76%,calc(100%-96px))]"
     >
       <div className="flex h-full flex-col">
         <div ref={scrollRef} className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3.5">
