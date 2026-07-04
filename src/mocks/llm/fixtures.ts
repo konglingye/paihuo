@@ -5,7 +5,9 @@ export interface LlmFixture {
   /** 命中最后一条用户消息即选用该 fixture；未命中任何 fixture 时退回 DEFAULT_FIXTURE */
   match?: (lastUserMessage: string) => boolean;
   /** 分片模拟——每个字符串是一次 onDelta 增量 */
-  chunks: string[];
+  chunks?: string[];
+  /** 需要根据输入动态拼答案时用这个（比如从状态快照里抠出真实 task id），优先于 chunks */
+  respond?: (lastUserMessage: string) => string[];
   usage?: Usage;
   /** 每个分片之间的模拟延迟（毫秒），默认 10 */
   delayMs?: number;
@@ -78,6 +80,12 @@ const DECOMPOSER_LAUNCH_EVENT_OUTPUT = {
 const decomposerJsonText = JSON.stringify(DECOMPOSER_LAUNCH_EVENT_OUTPUT);
 const decomposerMid = Math.floor(decomposerJsonText.length / 2);
 
+/** 整理官状态快照块里一行形如 "- <id> [status] <title> fit=..."，从里面抠出指定标题对应的真实 task id */
+function findTaskIdByTitleFragment(stateSnapshot: string, titleFragment: string): string | undefined {
+  const line = stateSnapshot.split('\n').find((l) => l.includes(titleFragment));
+  return line?.match(/^- (\S+) /)?.[1];
+}
+
 export const FIXTURES: LlmFixture[] = [
   {
     id: 'meeting-notes-done',
@@ -91,6 +99,28 @@ export const FIXTURES: LlmFixture[] = [
     // 分两片模拟流式，拼起来才是合法 JSON
     chunks: [decomposerJsonText.slice(0, decomposerMid), decomposerJsonText.slice(decomposerMid)],
     usage: { promptTokens: 180, completionTokens: 220, totalTokens: 400 },
+  },
+  {
+    id: 'organizer-find-relations',
+    match: (msg) => msg.includes('合并推进'),
+    respond: (msg) => {
+      const pptId = findTaskIdByTitleFragment(msg, '发布会 PPT');
+      const copyId = findTaskIdByTitleFragment(msg, '发布会宣传文案');
+      const output =
+        pptId && copyId
+          ? {
+              suggestions: [
+                {
+                  taskIds: [pptId, copyId],
+                  reason: '发布会 PPT 和宣传文案用的是同一套信息',
+                  suggestion: '先花 5 分钟定下：新品卖点、政策要点、时间地点，两份提示词一起生效',
+                },
+              ],
+            }
+          : { suggestions: [] };
+      return [JSON.stringify(output)];
+    },
+    usage: { promptTokens: 120, completionTokens: 60, totalTokens: 180 },
   },
 ];
 

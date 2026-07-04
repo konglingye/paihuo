@@ -17,7 +17,7 @@ describe('streamChatCompletion（统一入口）', () => {
       { onDelta: (d) => deltas.push(d) },
     );
 
-    expect(result.content).toBe(DEFAULT_FIXTURE.chunks.join(''));
+    expect(result.content).toBe(DEFAULT_FIXTURE.chunks!.join(''));
   });
 
   it('非 mock 模式走真实通道（经 background port）', async () => {

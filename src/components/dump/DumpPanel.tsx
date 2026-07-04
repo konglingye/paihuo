@@ -2,9 +2,23 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@/src/components/icons/Icon';
 import { AttachButton } from '@/src/components/attachments/AttachButton';
 import { TaskCard } from '@/src/components/tasks/TaskCard';
+import { TypeFilterRow } from '@/src/components/tasks/TypeFilterRow';
+import { GroupHeader } from '@/src/components/tasks/GroupHeader';
+import { RelationBanner } from '@/src/components/tasks/RelationBanner';
+import { buildDisplayGroups } from '@/src/components/tasks/groupTasks';
 import { useToast } from '@/src/components/ui';
-import { useFragmentsStore, useTasksStore } from '@/src/store';
+import {
+  useFragmentsStore,
+  useGroupsStore,
+  useRelationsStore,
+  useSettingsStore,
+  useTasksStore,
+  useUiStore,
+} from '@/src/store';
 import { findCatalogEntry } from '@/src/agents/tools/catalog';
+import { createDefaultToolRegistry } from '@/src/agents/registry';
+import { createLlmDriver } from '@/src/agents/harness/llmDriver';
+import { runOrganize } from '@/src/agents/runOrganize';
 import { DECOMPOSER_SAMPLE_INPUT } from '@/src/mocks/llm/fixtures';
 import { useDecomposeRun } from './useDecomposeRun';
 import type { FragmentAttachment } from '@/src/store/schema';
@@ -41,10 +55,18 @@ export function DumpPanel() {
   const [pendingAttachments, setPendingAttachments] = useState<FragmentAttachment[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [justAddedIds, setJustAddedIds] = useState<string[]>([]);
+  const [organizing, setOrganizing] = useState(false);
+  const [dismissedRelationIds, setDismissedRelationIds] = useState<Set<string>>(new Set());
   const { phase, error, run } = useDecomposeRun();
   const { show } = useToast();
 
   const tasks = useTasksStore((s) => s.tasks);
+  const groups = useGroupsStore((s) => s.groups);
+  const relations = useRelationsStore((s) => s.relations);
+  const settings = useSettingsStore((s) => s.settings);
+  const taskFilter = useUiStore((s) => s.taskFilter);
+  const setTaskFilter = useUiStore((s) => s.setTaskFilter);
+  const openChat = useUiStore((s) => s.openChat);
   const addFragment = useFragmentsStore((s) => s.addFragment);
 
   const busy = phase === 'reading' || phase === 'drafting';
@@ -65,7 +87,30 @@ export function DumpPanel() {
     setCollapsed(true);
   }
 
-  const taskIds = Object.keys(tasks);
+  async function handleFindRelations() {
+    setOrganizing(true);
+    try {
+      const registry = createDefaultToolRegistry();
+      const llm = createLlmDriver({ baseUrl: settings.baseUrl, apiKey: settings.apiKey });
+      const activeTasks = Object.values(useTasksStore.getState().tasks).filter((t) => t.status !== 'done');
+      const result = await runOrganize(activeTasks, { registry, llm, defaultModel: settings.model });
+      show(result.relations.length > 0 ? `找到 ${result.relations.length} 组可能有关联的活儿` : '没找到明显的关联');
+    } catch (err) {
+      show(`找关联失败：${err instanceof Error ? err.message : '未知错误'}`);
+    } finally {
+      setOrganizing(false);
+    }
+  }
+
+  function handleGoToChat() {
+    openChat();
+    show('小派对话马上就来，先记着这个关联');
+  }
+
+  const allTasks = Object.values(tasks);
+  const filteredTasks = taskFilter === 'all' ? allTasks : allTasks.filter((t) => t.type === taskFilter);
+  const displayGroups = buildDisplayGroups(filteredTasks, groups, relations);
+  const visibleRelations = taskFilter === 'all' ? relations.filter((r) => !dismissedRelationIds.has(r.id)) : [];
 
   return (
     <div>
@@ -164,25 +209,63 @@ export function DumpPanel() {
         </div>
       )}
 
-      <div className="p-3.5 pt-2.5">
+      {allTasks.length > 0 && (
+        <div className="flex items-center gap-1.5 px-3.5 pb-1">
+          <div className="flex-1">
+            <TypeFilterRow tasks={allTasks} value={taskFilter} onChange={setTaskFilter} />
+          </div>
+          {allTasks.length > 1 && (
+            <button
+              type="button"
+              disabled={organizing}
+              onClick={handleFindRelations}
+              aria-label="手动找一次关联"
+              className="flex h-7 w-7 flex-none items-center justify-center rounded-lg text-sub hover:bg-gray-soft hover:text-ink disabled:opacity-50"
+            >
+              <Icon name="link" className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="px-3.5 pb-3.5">
+        {visibleRelations.map((relation) => (
+          <RelationBanner
+            key={relation.id}
+            relation={relation}
+            onGoToChat={handleGoToChat}
+            onDismiss={() => setDismissedRelationIds((prev) => new Set(prev).add(relation.id))}
+          />
+        ))}
+
         {busy && (
           <>
             <SkeletonCard />
             <SkeletonCard />
           </>
         )}
-        {taskIds.map((id) => (
-          <AnimatedEntry key={id} delayMs={justAddedIds.includes(id) ? justAddedIds.indexOf(id) * 70 : 0}>
-            <TaskCard
-              taskId={id}
-              toolName={tasks[id].toolId ? findCatalogEntry(tasks[id].toolId!)?.name : undefined}
-              toolUrl={tasks[id].toolId ? findCatalogEntry(tasks[id].toolId!)?.url : undefined}
-            />
-          </AnimatedEntry>
+
+        {displayGroups.map((group) => (
+          <div key={group.key}>
+            <GroupHeader kind={group.kind} label={group.label} relatedCount={group.relatedCount} />
+            {group.tasks.map((task) => (
+              <AnimatedEntry
+                key={task.id}
+                delayMs={justAddedIds.includes(task.id) ? justAddedIds.indexOf(task.id) * 70 : 0}
+              >
+                <TaskCard
+                  taskId={task.id}
+                  toolName={task.toolId ? findCatalogEntry(task.toolId)?.name : undefined}
+                  toolUrl={task.toolId ? findCatalogEntry(task.toolId)?.url : undefined}
+                />
+              </AnimatedEntry>
+            ))}
+          </div>
         ))}
-        {taskIds.length === 0 && !busy && (
+
+        {displayGroups.length === 0 && !busy && (
           <p className="mt-3 rounded-xl border border-dashed border-hair bg-wash px-3 py-2.5 text-[12.5px] text-faint">
-            还没有活儿——倒一段试试，或点上面「试试示例」
+            {allTasks.length === 0 ? '还没有活儿——倒一段试试，或点上面「试试示例」' : '这个类型下暂时没有活儿'}
           </p>
         )}
       </div>

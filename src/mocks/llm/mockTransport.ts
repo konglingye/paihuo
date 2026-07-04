@@ -25,9 +25,10 @@ export const mockStreamChatCompletion: StreamChatCompletion = async (params, cal
 
   const lastUserMessage = [...params.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
   const fixture = findFixture(lastUserMessage);
+  const chunks = fixture.respond ? fixture.respond(lastUserMessage) : (fixture.chunks ?? []);
 
   let content = '';
-  for (const chunk of fixture.chunks) {
+  for (const chunk of chunks) {
     await delay(fixture.delayMs ?? 10, signal);
     content += chunk;
     callbacks.onDelta?.(chunk);

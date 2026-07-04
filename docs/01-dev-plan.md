@@ -70,8 +70,9 @@
 - [x] **T12 工具目录与卡片动作**：`assets/tools.json`（spec §5）+ `pnpm check:tools` URL 核验脚本；「复制提示词 · 打开工具」（clipboard+tabs）、「复制小抄」、「标记完成」动效。
   DoD：check:tools 全绿；Playwright 断言复制内容与开 tab（mock tabs）。
   ✅ 2026-07-04 验证方式：`src/assets/tools.json` 补齐 spec §5 完整 16 项目录（categories/strengths/priceNote/registerNote）；`scripts/check-tools.mjs`（`pnpm check:tools`）真实请求逐一核验，2xx/3xx 通过、403/429（Cloudflare 反爬挑战等）降级为警告不算失败、真失效才报错退出非零；发现沙箱网络走本地代理导致 Node fetch 不像 curl 自动读 HTTP_PROXY，已用 `undici` 的 `ProxyAgent` 接上，16/16 全部核验通过（2 个是确认过的真实站点，被反爬拦截打警告）；`TaskCard` 补上「复制提示词 · 打开工具」真实动作（`navigator.clipboard.writeText` + `browser.tabs.create`，`vi.spyOn` mock tabs 断言调用参数）、复制成功态 2.6s 后自动还原、fit=self 只复制不开 tab、标记完成时插入粒子动效 span（9 个 RTL 用例覆盖，含 mock tabs 断言复制内容与开 tab 参数）；`pnpm build` 后 Playwright 加载真实解包扩展点「复制提示词·打开豆包」，验证剪贴板真实写入提示词全文、真开了一个指向 doubao.com 的新 tab（确认后立即关闭不等它加载完）、按钮切换已复制态+toast，再点「标记完成」截图确认动效与终态，控制台无报错；截图存 `docs/qa/T12-*.png`；`pnpm test`（36 文件 258 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。
-- [ ] **T13 整理官与筛选**：organizer profile（事件触发，见 T17 前先手动触发）产关联建议→横幅；类型筛选 chips+计数；分组头三态。
+- [x] **T13 整理官与筛选**：organizer profile（事件触发，见 T17 前先手动触发）产关联建议→横幅；类型筛选 chips+计数；分组头三态。
   DoD：mock 下筛「演示」只剩 PPT 卡；关联横幅出现/可关/进对话。
+  ✅ 2026-07-04 验证方式：mock fixture 机制扩展 `respond` 动态响应（能从状态快照文本里抠出真实 task id 拼建议），新增 organizer fixture（2 用例覆盖命中/不命中）；`runOrganize.ts` 手动触发整理官（真实 taskId，不需要像拆解官那样做 localId 映射），4 个用例覆盖建议落库/无关联/契约降级/LLM报错四态；`groupTasks.ts` 纯函数把任务分桶成 紧急(due.hot)/项目(有groupId)/日常 三态、项目组算出组内关联数（6 用例）；`GroupHeader`/`TypeFilterRow`/`RelationBanner` 三个展示组件（8 个 RTL 用例）；接入 `DumpPanel`：类型筛选行+计数、按分组渲染、关联横幅（仅在筛选=全部时显示，命中原型行为）、横幅"分开做"本地隐藏不删数据、"好，先定关键信息"调 `openChat()`+toast（真正的对话 UI 是 T14 的事，这里先做状态级前向兼容）、活儿 tab 头部新增手动"找关联"图标按钮触发 organizer。Playwright 用真实解包扩展验证：拆解出的 4 卡正确分成"今天必须交"（红）/"下周一·新品发布会"（蓝+2件有关联）/"日常"（灰）三组、筛"演示"只剩 PPT 卡且横幅收起、切回全部横幅重新出现、点"分开做"横幅消失，控制台无报错，截图存 `docs/qa/T13-*.png`；`pnpm test`（41 文件 278 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。**M3 里程碑完成**：核心价值（倒活→拆解→派活）可完整演示。
 
 ### M4 盯活：小派 orchestrator
 
