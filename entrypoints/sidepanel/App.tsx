@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { IconSprite } from '@/src/components/icons/IconSprite';
 import { Icon } from '@/src/components/icons/Icon';
-import { useSettingsStore, useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
+import { useCaptureStore, useSettingsStore, useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
 import { SettingsSheet } from '@/src/components/settings/SettingsSheet';
 import { DumpPanel } from '@/src/components/dump/DumpPanel';
 import { OverviewPanel } from '@/src/components/overview/OverviewPanel';
@@ -58,7 +58,12 @@ function App() {
       useUiStore.getState().notify('今天完成了一些活儿，要不要顺手写个日报？');
       dismissEodNudge();
     }
-  }, []);
+
+    // 右键收集（spec §7）：background 写进 chrome.storage 的选中文本可能比这次挂载还新，先水合一下再看
+    void Promise.resolve(useCaptureStore.persist.rehydrate()).then(() => {
+      if (useCaptureStore.getState().pendingText) setActiveTab('jobs');
+    });
+  }, [setActiveTab]);
 
   return (
     <ToastProvider>

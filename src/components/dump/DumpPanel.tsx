@@ -8,6 +8,7 @@ import { RelationBanner } from '@/src/components/tasks/RelationBanner';
 import { buildDisplayGroups } from '@/src/components/tasks/groupTasks';
 import { useToast } from '@/src/components/ui';
 import {
+  useCaptureStore,
   useFragmentsStore,
   useGroupsStore,
   useRelationsStore,
@@ -74,6 +75,17 @@ export function DumpPanel() {
   useEffect(() => {
     if (phase === 'error' && error) show(error);
   }, [phase, error, show]);
+
+  // 右键收集（spec §7）：文本进倒活框，不自动拆解——取走一次就清空，避免重复消费
+  useEffect(() => {
+    void Promise.resolve(useCaptureStore.persist.rehydrate()).then(() => {
+      const captured = useCaptureStore.getState().takePendingText();
+      if (captured) {
+        setDumpText((prev) => (prev ? `${prev}\n${captured}` : captured));
+        setCollapsed(false);
+      }
+    });
+  }, []);
 
   async function handleDecompose(text: string) {
     if (!text.trim() && pendingAttachments.length === 0) return;

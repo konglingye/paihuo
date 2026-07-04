@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { fakeBrowser } from 'wxt/testing';
-import { useTasksStore, useUiStore } from '@/src/store';
+import { useCaptureStore, useTasksStore, useUiStore } from '@/src/store';
 import App from './App';
 
 describe('App', () => {
@@ -9,6 +9,7 @@ describe('App', () => {
     fakeBrowser.reset();
     useUiStore.setState({ activeTab: 'overview', chatOpen: false, settingsOpen: false, reveal: null, notification: null });
     useTasksStore.setState({ tasks: {} });
+    useCaptureStore.setState({ pendingText: null });
   });
 
   it('渲染总览/活儿/汇报三个 tab，默认选中总览', () => {

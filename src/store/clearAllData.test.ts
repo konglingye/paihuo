@@ -11,6 +11,7 @@ import { useTraceStore } from './traceStore';
 import { useMemoryStore } from './memoryStore';
 import { useWorklogStore } from './worklogStore';
 import { useReportTemplateStore } from './reportTemplateStore';
+import { useCaptureStore } from './captureStore';
 
 describe('clearAllData（设置页"清空所有数据"）', () => {
   beforeEach(() => {
@@ -33,6 +34,7 @@ describe('clearAllData（设置页"清空所有数据"）', () => {
     useMemoryStore.getState().remember('他姓李');
     useWorklogStore.getState().archiveIfNewDay('2026-07-04', []);
     useReportTemplateStore.getState().setTemplate({ name: 'x.docx', text: 'y' });
+    useCaptureStore.getState().setPendingText('选中的文本');
   });
 
   it('清空后每个 store 都回到初始空状态', () => {
@@ -49,5 +51,6 @@ describe('clearAllData（设置页"清空所有数据"）', () => {
     expect(useWorklogStore.getState().entries).toEqual([]);
     expect(useWorklogStore.getState().lastActiveDate).toBeNull();
     expect(useReportTemplateStore.getState().template).toBeNull();
+    expect(useCaptureStore.getState().pendingText).toBeNull();
   });
 });

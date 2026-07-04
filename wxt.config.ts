@@ -14,5 +14,11 @@ export default defineConfig({
     action: {
       default_title: '派活儿',
     },
+    commands: {
+      'toggle-panel': {
+        suggested_key: { default: 'Ctrl+Shift+Y', mac: 'Command+Shift+Y' },
+        description: '打开派活儿面板',
+      },
+    },
   },
 });

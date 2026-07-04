@@ -15,4 +15,5 @@ export { useWorklogStore, buildDailySummary } from './worklogStore';
 export type { WorklogEntry } from './worklogStore';
 export { useReportTemplateStore } from './reportTemplateStore';
 export type { ReportTemplate } from './reportTemplateStore';
+export { useCaptureStore } from './captureStore';
 export { clearAllData } from './clearAllData';
