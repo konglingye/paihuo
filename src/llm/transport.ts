@@ -67,7 +67,7 @@ export async function streamChatCompletion(
   callbacks: StreamChatCompletionCallbacks,
   signal?: AbortSignal,
 ): Promise<StreamChatCompletionResult> {
-  const { baseUrl, apiKey, model, messages, temperature, tools, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
+  const { baseUrl, apiKey, model, messages, temperature, tools, maxTokens, timeoutMs = DEFAULT_TIMEOUT_MS } = params;
   const internalController = new AbortController();
   let timedOut = false;
   let externallyAborted = false;
@@ -105,6 +105,7 @@ export async function streamChatCompletion(
           messages: messages.map(toWireMessage),
           temperature,
           stream: true,
+          ...(maxTokens ? { max_tokens: maxTokens } : {}),
           ...(tools?.length
             ? {
                 tools: tools.map((tool) => ({

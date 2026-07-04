@@ -2,13 +2,17 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { chromeStorage } from './storage';
 import { SCHEMA_VERSION } from './version';
+import { MODEL_PRESETS } from '@/src/llm/presets';
 import type { Settings } from './schema';
 
+const DEFAULT_PRESET = MODEL_PRESETS[0];
+
+/** 默认预选 DeepSeek（推荐），对应原型 .preset.sel 的默认态 */
 export const DEFAULT_SETTINGS: Settings = {
-  baseUrl: '',
+  baseUrl: DEFAULT_PRESET.baseUrl,
   apiKey: '',
   model: '',
-  presetId: '',
+  presetId: DEFAULT_PRESET.id,
 };
 
 interface SettingsState {

@@ -7,3 +7,4 @@ export type { SegmentedTabOption } from './SegmentedTabs';
 export { Sheet } from './Sheet';
 export { ToastProvider, useToast } from './Toast';
 export { ProgressRing } from './ProgressRing';
+export { Field } from './Field';

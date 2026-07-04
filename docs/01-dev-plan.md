@@ -55,8 +55,9 @@
 
 ### M2 接上 AI
 
-- [ ] **T09 设置向导**：3 步 UI 照原型；预设与注册链接（spec §3.4）；`/models` 探测回退；推理模型识别置顶+自动选中+非推理警告；测试连接三态（成功/401/429）。
+- [x] **T09 设置向导**：3 步 UI 照原型；预设与注册链接（spec §3.4）；`/models` 探测回退；推理模型识别置顶+自动选中+非推理警告；测试连接三态（成功/401/429）。
   DoD：mock 下 Playwright 走完全流程；错误态文案与"回设置"引导齐全。
+  ✅ 2026-07-04 验证方式：`src/llm/presets.ts`（5 预设表）+ `reasoningModel.ts`（spec 正则+白名单覆盖，17 用例）+ `models.ts`（`/v1/models` 探测回退+错误分类，本地 http server 测 5 态）+ `mockModels.ts`（按预设关键词模拟推理/非推理混合模型列表）；`transport.ts` 加 `maxTokens`→`max_tokens`；`testConnection.ts`（1-token 测试连接，成功/401/429/network 四态 DI 测试）；`src/components/settings/SettingsSheet.tsx` 照原型 `.set-sheet` 实现 3 步向导（复用 Sheet/Chip/Field/Button），直接绑定 settingsStore（无独立草稿态）；新增 `clearAllData()`（设置页双确认清空全部 store，测试覆盖）；接入 sidepanel 头部齿轮按钮（`uiStore.settingsOpen`）；`VITE_PAIHUO_MOCK=1` 构建后 Playwright 加载真实解包扩展，走完选平台→粘 key→拉取模型列表→推理模型自动置顶选中→手动切非推理模型触发红条警告→切回→测试连接成功显示"已连通 · deepseek-reasoner · 22ms"，全程截图存 `docs/qa/T09-*.png`，控制台无报错；`pnpm test`（30 文件 201 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock 两种构建）全绿。
 
 ### M3 核心循环：倒活→拆解→派活
 

@@ -272,4 +272,17 @@ describe('streamChatCompletion 工具调用', () => {
     const result = await streamChatCompletion({ ...baseParams, baseUrl }, {});
     expect(result.toolCalls).toBeUndefined();
   });
+
+  it('maxTokens 会转成请求体里的 max_tokens（测试连接用来省钱）', async () => {
+    let capturedBody = '';
+    const baseUrl = await startServer(async (req, res) => {
+      capturedBody = await readRequestBody(req);
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.end('data: [DONE]\n\n');
+    });
+
+    await streamChatCompletion({ ...baseParams, baseUrl, maxTokens: 1 }, {});
+
+    expect(JSON.parse(capturedBody).max_tokens).toBe(1);
+  });
 });

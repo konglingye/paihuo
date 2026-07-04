@@ -58,6 +58,8 @@ export interface StreamChatCompletionParams {
   /** 单次请求超时（毫秒），默认 30000 */
   timeoutMs?: number;
   tools?: LlmToolSpec[];
+  /** 限制回复长度，测试连接时传 1 省钱 */
+  maxTokens?: number;
 }
 
 export interface StreamChatCompletionCallbacks {

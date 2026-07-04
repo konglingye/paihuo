@@ -9,3 +9,4 @@ export { useRelationsStore } from './relationsStore';
 export { useUiStore } from './uiStore';
 export type { ActiveTab, TaskFilter } from './uiStore';
 export { useTraceStore } from './traceStore';
+export { clearAllData } from './clearAllData';
