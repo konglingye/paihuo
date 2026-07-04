@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { browser } from 'wxt/browser';
 import { Icon } from '@/src/components/icons/Icon';
-import { Pill, Button } from '@/src/components/ui';
+import { Pill, Button, useToast } from '@/src/components/ui';
 import { useTasksStore } from '@/src/store';
 import { cn } from '@/src/lib/cn';
 import type { Task } from '@/src/store/schema';
@@ -19,6 +20,11 @@ const FIT_LABELS: Record<Task['fit'], string> = {
   self: '自己来 · 有小抄',
 };
 
+const COPIED_STATE_MS = 2600;
+const BURST_PARTICLES = 6;
+const BURST_RADIUS_PX = 22;
+const BURST_DURATION_MS = 600;
+
 /** 用户必须补的信息一律写成【…】空槽，这里渲染成高亮 mark（原型 .slot） */
 function renderPromptWithSlots(text: string) {
   return text.split(/(【[^】]*】)/g).map((part, i) =>
@@ -32,23 +38,77 @@ function renderPromptWithSlots(text: string) {
   );
 }
 
+/** 完成时的粒子动效（原型 .spark-burst）：临时插入几个 span，动画结束后自行移除 */
+function burstFrom(container: HTMLElement, originEl: HTMLElement) {
+  const containerRect = container.getBoundingClientRect();
+  const originRect = originEl.getBoundingClientRect();
+  const x = originRect.left - containerRect.left + originRect.width / 2;
+  const y = originRect.top - containerRect.top + originRect.height / 2;
+
+  for (let i = 0; i < BURST_PARTICLES; i++) {
+    const angle = (i / BURST_PARTICLES) * Math.PI * 2 + 0.4;
+    const span = document.createElement('span');
+    span.style.cssText = [
+      'position:absolute',
+      'width:5px',
+      'height:5px',
+      'border-radius:50%',
+      'background:var(--color-ok)',
+      'pointer-events:none',
+      'z-index:30',
+      `left:${x}px`,
+      `top:${y}px`,
+      `--dx:${Math.cos(angle) * BURST_RADIUS_PX}px`,
+      `--dy:${Math.sin(angle) * BURST_RADIUS_PX}px`,
+      'animation:burst .55s ease-out forwards',
+    ].join(';');
+    container.appendChild(span);
+    setTimeout(() => span.remove(), BURST_DURATION_MS);
+  }
+}
+
 export interface TaskCardProps {
   taskId: string;
   toolName?: string;
+  toolUrl?: string;
 }
 
 /** 任务卡：对应原型 .card，逐张入场动效由列表容器负责，这里只管自身的展开/收起与操作 */
-export function TaskCard({ taskId, toolName }: TaskCardProps) {
+export function TaskCard({ taskId, toolName, toolUrl }: TaskCardProps) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const task = useTasksStore((s) => s.tasks[taskId]);
   const completeTask = useTasksStore((s) => s.completeTask);
+  const { show } = useToast();
 
   if (!task) return null;
 
   const done = task.status === 'done';
 
+  async function handleCopyAndOpen() {
+    try {
+      await navigator.clipboard?.writeText(task.prompt ?? '');
+    } catch {
+      // 某些环境剪贴板权限不可用，忽略——用户仍能在展开区看到完整提示词
+    }
+    if (task.fit !== 'self' && toolUrl) {
+      browser.tabs.create({ url: toolUrl }).catch(() => {});
+    }
+    setCopied(true);
+    show(task.fit === 'self' ? '小抄已复制' : `提示词已复制 — 粘贴到 ${toolName ?? '工具'} 就能用`);
+    setTimeout(() => setCopied(false), COPIED_STATE_MS);
+  }
+
+  function handleComplete(e: React.MouseEvent<HTMLElement>) {
+    e.stopPropagation();
+    if (done) return;
+    completeTask(task.id);
+    if (cardRef.current) burstFrom(cardRef.current, e.currentTarget);
+  }
+
   return (
-    <article className="mb-2 rounded-card border border-hairsoft bg-white shadow-card transition hover:border-hair hover:shadow-lift">
+    <article ref={cardRef} className="relative mb-2 rounded-card border border-hairsoft bg-white shadow-card transition hover:border-hair hover:shadow-lift">
       <div
         role="button"
         tabIndex={0}
@@ -67,10 +127,7 @@ export function TaskCard({ taskId, toolName }: TaskCardProps) {
           aria-checked={done}
           aria-label="标记完成"
           tabIndex={0}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!done) completeTask(task.id);
-          }}
+          onClick={handleComplete}
           className={cn(
             'mt-0.5 flex h-[19px] w-[19px] flex-none items-center justify-center rounded-md border-[1.5px] transition',
             done ? 'border-transparent bg-ok' : 'border-black/20 bg-white hover:border-accent',
@@ -116,16 +173,17 @@ export function TaskCard({ taskId, toolName }: TaskCardProps) {
           )}
           {!done && (
             <div className="flex gap-2">
-              <Button
-                variant="primary"
-                size="sm"
-                className="flex-1"
-                onClick={() => navigator.clipboard?.writeText(task.prompt ?? '')}
-              >
-                <Icon name="copy" />
-                {task.fit === 'self' ? '复制小抄' : `复制提示词${toolName ? ` · 打开 ${toolName}` : ''}`}
+              <Button variant={copied ? 'success' : 'primary'} size="sm" className="flex-1" onClick={handleCopyAndOpen}>
+                <Icon name={copied ? 'check' : 'copy'} />
+                {copied
+                  ? task.fit === 'self'
+                    ? '已复制，改个称呼就能发'
+                    : `已复制 · 真实插件会顺手打开 ${toolName ?? ''}`
+                  : task.fit === 'self'
+                    ? '复制小抄'
+                    : `复制提示词${toolName ? ` · 打开 ${toolName}` : ''}`}
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => completeTask(task.id)}>
+              <Button variant="secondary" size="sm" onClick={handleComplete}>
                 标记完成
               </Button>
             </div>

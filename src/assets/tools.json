@@ -1,5 +1,14 @@
 [
   {
+    "id": "doubao",
+    "name": "豆包",
+    "url": "https://www.doubao.com",
+    "registerNote": "手机号登录",
+    "categories": ["write", "comm", "misc"],
+    "strengths": "中文对话流畅，上手快，日常沟通文案顺手",
+    "priceNote": "免费"
+  },
+  {
     "id": "deepseek",
     "name": "DeepSeek",
     "url": "https://chat.deepseek.com",
@@ -9,13 +18,103 @@
     "priceNote": "有免费额度"
   },
   {
-    "id": "doubao",
-    "name": "豆包",
-    "url": "https://www.doubao.com",
-    "registerNote": "手机号登录",
-    "categories": ["write", "comm", "misc"],
-    "strengths": "中文对话流畅，上手快",
+    "id": "kimi",
+    "name": "Kimi",
+    "url": "https://kimi.com",
+    "registerNote": "手机号/微信登录",
+    "categories": ["write", "slide", "data"],
+    "strengths": "长文本能力强，适合读长会议记录、写长文案",
+    "priceNote": "有免费额度"
+  },
+  {
+    "id": "tongyi",
+    "name": "通义千问",
+    "url": "https://tongyi.com",
+    "registerNote": "淘宝/支付宝账号登录",
+    "categories": ["write", "data", "comm"],
+    "strengths": "阿里出品，中文写作和表格处理都还行",
     "priceNote": "免费"
+  },
+  {
+    "id": "yiyan",
+    "name": "文心一言",
+    "url": "https://yiyan.baidu.com",
+    "registerNote": "百度账号登录",
+    "categories": ["write", "comm", "misc"],
+    "strengths": "百度出品，中文对话稳定",
+    "priceNote": "免费"
+  },
+  {
+    "id": "metaso",
+    "name": "秘塔搜索",
+    "url": "https://metaso.cn",
+    "registerNote": "手机号登录",
+    "categories": ["data", "misc"],
+    "strengths": "AI 搜索，查资料、找数据来源快且干净",
+    "priceNote": "免费"
+  },
+  {
+    "id": "tingwu",
+    "name": "通义听悟",
+    "url": "https://tingwu.aliyun.com",
+    "registerNote": "阿里云账号登录",
+    "categories": ["comm"],
+    "strengths": "会议录音转写+摘要，开完会直接出纪要",
+    "priceNote": "有免费额度"
+  },
+  {
+    "id": "feishu-miaoji",
+    "name": "飞书妙记",
+    "url": "https://www.feishu.cn",
+    "registerNote": "飞书账号登录",
+    "categories": ["comm"],
+    "strengths": "飞书生态内的会议转写和纪要生成",
+    "priceNote": "随飞书套餐"
+  },
+  {
+    "id": "wps-ai",
+    "name": "WPS AI",
+    "url": "https://ai.wps.cn",
+    "registerNote": "WPS 账号登录",
+    "categories": ["write", "slide", "data"],
+    "strengths": "直接在文档/表格/PPT 里用，office 场景最顺手",
+    "priceNote": "部分功能需会员"
+  },
+  {
+    "id": "xinghuo",
+    "name": "讯飞星火",
+    "url": "https://xinghuo.xfyun.cn",
+    "registerNote": "手机号注册",
+    "categories": ["write", "comm", "misc"],
+    "strengths": "科大讯飞出品，语音相关场景有优势",
+    "priceNote": "有免费额度"
+  },
+  {
+    "id": "jimeng",
+    "name": "即梦",
+    "url": "https://jimeng.jianying.com",
+    "registerNote": "抖音账号登录",
+    "categories": ["slide", "misc"],
+    "strengths": "AI 图片/视频生成，配图素材找灵感",
+    "priceNote": "有免费额度"
+  },
+  {
+    "id": "klingai",
+    "name": "可灵",
+    "url": "https://klingai.com",
+    "registerNote": "手机号注册",
+    "categories": ["misc"],
+    "strengths": "快手出品的 AI 视频生成",
+    "priceNote": "有免费额度"
+  },
+  {
+    "id": "jianying",
+    "name": "剪映",
+    "url": "https://www.jianying.com",
+    "registerNote": "抖音账号登录",
+    "categories": ["misc"],
+    "strengths": "剪视频、加字幕、AI 配音一站式",
+    "priceNote": "部分功能需会员"
   },
   {
     "id": "gamma",
@@ -25,5 +124,23 @@
     "categories": ["slide"],
     "strengths": "一句话生成 PPT 大纲和排版",
     "priceNote": "有免费额度"
+  },
+  {
+    "id": "deepl",
+    "name": "DeepL",
+    "url": "https://www.deepl.com",
+    "registerNote": "免注册可直接用网页版",
+    "categories": ["write", "misc"],
+    "strengths": "翻译质量业内公认top，尤其是欧洲语言",
+    "priceNote": "免费额度较大"
+  },
+  {
+    "id": "immersive-translate",
+    "name": "沉浸式翻译",
+    "url": "https://immersivetranslate.com",
+    "registerNote": "浏览器插件，免注册可用",
+    "categories": ["write", "misc"],
+    "strengths": "网页双语对照翻译，看外文资料省事",
+    "priceNote": "免费"
   }
 ]

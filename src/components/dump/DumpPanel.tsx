@@ -173,7 +173,11 @@ export function DumpPanel() {
         )}
         {taskIds.map((id) => (
           <AnimatedEntry key={id} delayMs={justAddedIds.includes(id) ? justAddedIds.indexOf(id) * 70 : 0}>
-            <TaskCard taskId={id} toolName={tasks[id].toolId ? findCatalogEntry(tasks[id].toolId!)?.name : undefined} />
+            <TaskCard
+              taskId={id}
+              toolName={tasks[id].toolId ? findCatalogEntry(tasks[id].toolId!)?.name : undefined}
+              toolUrl={tasks[id].toolId ? findCatalogEntry(tasks[id].toolId!)?.url : undefined}
+            />
           </AnimatedEntry>
         ))}
         {taskIds.length === 0 && !busy && (

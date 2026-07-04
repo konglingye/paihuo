@@ -67,8 +67,9 @@
 - [x] **T11 拆解官链路**：decomposer profile（契约=spec §6.1 schema）接倒活 UI：思考态流光两段文案（来自 loop 流式事件）→ 骨架 → 任务卡逐张入场；空槽【…】高亮渲染。
   DoD：mock 下点「拆解」产出与原型一致的 4 卡；契约校验失败走降级卡路径（单测）。
   ✅ 2026-07-04 验证方式：`materializeDecomposerOutput.ts` 把拆解官输出（localId 互相引用）落成真实 task/group/relation 记录（3 用例，含关联引用不存在 id 时跳过不抛错）；`runDecompose.ts` 核心逻辑用脚本化 mock LLM 测试契约一次通过/两次失败走 fallback「待手动拆」降级卡/401 报错三态（4 用例，覆盖 DoD 的单测要求）；`useDecomposeRun` 钩子包一层 React 状态，思考态两段文案由 `onDelta` 真实流式事件驱动切换（不是定时器假装）；`TaskCard` 组件（空槽【】高亮渲染成 `<mark>`、展开/收起、复选框标记完成，6 个 RTL 用例）；`AttachButton` 扩展 `onFile` 回调支持倒活面板攒附件后一次性提交（不再各自建 fragment）；`DumpPanel` 整合 textarea+附件+试试示例+拆解按钮+思考态+骨架屏+卡片逐张入场动效，接入 sidepanel 活儿 tab（原 ToastProvider 上移到 App 根节点）；`VITE_PAIHUO_MOCK=1` 构建后 Playwright 加载真实解包扩展，点「试试示例」→「拆解」，产出与原型一致的 4 张任务卡（含 due/fit/type/工具名徽标）、展开后【粘贴飞书妙记的转写文字】高亮正确、倒活框正确折叠成"再倒点活儿进来"细条，控制台无报错，截图存 `docs/qa/T11-*.png`；`pnpm test`（36 文件 255 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。
-- [ ] **T12 工具目录与卡片动作**：`assets/tools.json`（spec §5）+ `pnpm check:tools` URL 核验脚本；「复制提示词 · 打开工具」（clipboard+tabs）、「复制小抄」、「标记完成」动效。
+- [x] **T12 工具目录与卡片动作**：`assets/tools.json`（spec §5）+ `pnpm check:tools` URL 核验脚本；「复制提示词 · 打开工具」（clipboard+tabs）、「复制小抄」、「标记完成」动效。
   DoD：check:tools 全绿；Playwright 断言复制内容与开 tab（mock tabs）。
+  ✅ 2026-07-04 验证方式：`src/assets/tools.json` 补齐 spec §5 完整 16 项目录（categories/strengths/priceNote/registerNote）；`scripts/check-tools.mjs`（`pnpm check:tools`）真实请求逐一核验，2xx/3xx 通过、403/429（Cloudflare 反爬挑战等）降级为警告不算失败、真失效才报错退出非零；发现沙箱网络走本地代理导致 Node fetch 不像 curl 自动读 HTTP_PROXY，已用 `undici` 的 `ProxyAgent` 接上，16/16 全部核验通过（2 个是确认过的真实站点，被反爬拦截打警告）；`TaskCard` 补上「复制提示词 · 打开工具」真实动作（`navigator.clipboard.writeText` + `browser.tabs.create`，`vi.spyOn` mock tabs 断言调用参数）、复制成功态 2.6s 后自动还原、fit=self 只复制不开 tab、标记完成时插入粒子动效 span（9 个 RTL 用例覆盖，含 mock tabs 断言复制内容与开 tab 参数）；`pnpm build` 后 Playwright 加载真实解包扩展点「复制提示词·打开豆包」，验证剪贴板真实写入提示词全文、真开了一个指向 doubao.com 的新 tab（确认后立即关闭不等它加载完）、按钮切换已复制态+toast，再点「标记完成」截图确认动效与终态，控制台无报错；截图存 `docs/qa/T12-*.png`；`pnpm test`（36 文件 258 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。
 - [ ] **T13 整理官与筛选**：organizer profile（事件触发，见 T17 前先手动触发）产关联建议→横幅；类型筛选 chips+计数；分组头三态。
   DoD：mock 下筛「演示」只剩 PPT 卡；关联横幅出现/可关/进对话。
 

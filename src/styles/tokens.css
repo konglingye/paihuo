@@ -56,3 +56,11 @@
     background-position: -200% 0;
   }
 }
+
+/* 标记完成的粒子动效（原型 .spark-burst） */
+@keyframes burst {
+  to {
+    transform: translate(var(--dx), var(--dy)) scale(0.2);
+    opacity: 0;
+  }
+}

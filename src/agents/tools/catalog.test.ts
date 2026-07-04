@@ -19,9 +19,10 @@ describe('search_tool_catalog', () => {
     expect(result.every((entry) => entry.categories.includes('slide'))).toBe(true);
   });
 
-  it('按关键词匹配名字/长处，命中的排在前面', async () => {
+  it('按关键词匹配名字/长处，命中的排在前面，没命中的不出现', async () => {
     const result = await searchToolCatalogTool.handler({ query: 'PPT' });
-    expect(result[0].id).toBe('gamma');
+    expect(result.map((entry) => entry.id)).toContain('gamma');
+    expect(result.every((entry) => entry.name.toLowerCase().includes('ppt') || entry.strengths.toLowerCase().includes('ppt'))).toBe(true);
   });
 
   it('查不到任何东西时返回空数组而不是抛错', async () => {
