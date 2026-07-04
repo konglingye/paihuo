@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { chromeStorage } from './storage';
 import { SCHEMA_VERSION } from './version';
+import { eventBus } from '@/src/agents/events';
 import type { Task, TaskDraft } from './schema';
 
 interface TasksState {
@@ -34,7 +35,7 @@ function migrateTasksState(persisted: unknown, version: number): { tasks: Record
 
 export const useTasksStore = create<TasksState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       tasks: {},
       addTasks: (drafts) => {
         const created: Task[] = drafts.map((draft) => ({
@@ -57,14 +58,18 @@ export const useTasksStore = create<TasksState>()(
           if (!existing) return state;
           return { tasks: { ...state.tasks, [id]: { ...existing, ...patch } } };
         }),
-      completeTask: (id) =>
+      completeTask: (id) => {
+        const existed = !!get().tasks[id];
         set((state) => {
           const existing = state.tasks[id];
           if (!existing) return state;
           return {
             tasks: { ...state.tasks, [id]: { ...existing, status: 'done', doneAt: Date.now() } },
           };
-        }),
+        });
+        // task.completed 事件（arch §5）：整理官轻量检查有没有已知关联的下一件任务可以建议
+        if (existed) void eventBus.emit({ type: 'task.completed', taskId: id });
+      },
       removeTask: (id) =>
         set((state) => {
           const { [id]: _removed, ...rest } = state.tasks;

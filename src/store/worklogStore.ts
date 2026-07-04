@@ -34,6 +34,8 @@ interface WorklogState {
   entries: WorklogEntry[];
   /** 上一次记录到的"活跃日期"，用来判断今天是不是新的一天 */
   lastActiveDate: string | null;
+  /** 非空时表示有一条"该写日报了"的提醒待展示（面板内温和提示，arch §5 alarm.eod），值是提醒对应的日期 */
+  eodNudgeDate: string | null;
   /** 写入或覆盖指定日期的摘要，并裁掉超过 90 天的旧条目 */
   recordDay: (date: string, tasks: Task[]) => void;
   /**
@@ -41,6 +43,10 @@ interface WorklogState {
    * 把上一个活跃日期的任务完成情况归档成一条工作日志，再把 lastActiveDate 更新成今天。
    */
   archiveIfNewDay: (currentDate: string, tasks: Task[]) => void;
+  /** alarm.eod 规则调用：今天有完成任务且还没写日报 → 记下待展示的提醒 */
+  checkEodAlarm: (date: string, tasks: Task[], hasReportToday: boolean) => void;
+  /** 面板展示过提醒后调用，避免同一条提醒反复弹 */
+  dismissEodNudge: () => void;
 }
 
 export const useWorklogStore = create<WorklogState>()(
@@ -48,6 +54,7 @@ export const useWorklogStore = create<WorklogState>()(
     (set, get) => ({
       entries: [],
       lastActiveDate: null,
+      eodNudgeDate: null,
       recordDay: (date, tasks) => {
         const summary = buildDailySummary(tasks, date);
         set((state) => {
@@ -66,6 +73,12 @@ export const useWorklogStore = create<WorklogState>()(
           entries: state.entries.filter((e) => daysBetween(e.date, currentDate) <= RETENTION_DAYS),
         }));
       },
+      checkEodAlarm: (date, tasks, hasReportToday) => {
+        if (hasReportToday) return;
+        const hasDoneToday = tasks.some((t) => t.doneAt !== undefined && toDateKey(t.doneAt) === date);
+        if (hasDoneToday) set({ eodNudgeDate: date });
+      },
+      dismissEodNudge: () => set({ eodNudgeDate: null }),
     }),
     {
       name: 'paihuo:worklog',

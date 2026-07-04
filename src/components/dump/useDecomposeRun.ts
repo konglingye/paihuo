@@ -5,6 +5,7 @@ import { useTraceStore } from '@/src/store/traceStore';
 import { createDefaultToolRegistry } from '@/src/agents/registry';
 import { createLlmDriver } from '@/src/agents/harness/llmDriver';
 import { runDecompose } from '@/src/agents/runDecompose';
+import { eventBus } from '@/src/agents/events';
 import type { Fragment } from '@/src/store/schema';
 
 export type DecomposePhase = 'idle' | 'reading' | 'drafting' | 'done' | 'error';
@@ -44,6 +45,8 @@ export function useDecomposeRun(): UseDecomposeRunResult {
 
       if (result.ok) {
         setPhase('done');
+        // dump.created 事件（arch §5）：拆解完成后自动跑一次整理官找关联，不用手动点"找关联"
+        void eventBus.emit({ type: 'dump.created', fragmentId: fragment.id });
       } else {
         setError(result.error);
         setPhase('error');

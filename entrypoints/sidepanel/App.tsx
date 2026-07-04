@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { IconSprite } from '@/src/components/icons/IconSprite';
 import { Icon } from '@/src/components/icons/Icon';
-import { useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
+import { useSettingsStore, useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
 import { SettingsSheet } from '@/src/components/settings/SettingsSheet';
 import { DumpPanel } from '@/src/components/dump/DumpPanel';
 import { OverviewPanel } from '@/src/components/overview/OverviewPanel';
@@ -10,6 +10,10 @@ import { ChatDock } from '@/src/components/chat/ChatDock';
 import { ChatSheet } from '@/src/components/chat/ChatSheet';
 import { NotifyBridge } from '@/src/components/chat/NotifyBridge';
 import { useOrchestratorChat } from '@/src/components/chat/useOrchestratorChat';
+import { eventBus } from '@/src/agents/events';
+import { registerDefaultEventRules } from '@/src/agents/eventRules';
+import { createDefaultToolRegistry } from '@/src/agents/registry';
+import { createLlmDriver } from '@/src/agents/harness/llmDriver';
 
 type TabId = 'overview' | 'jobs' | 'report';
 
@@ -18,6 +22,16 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'jobs', label: '活儿' },
   { id: 'report', label: '汇报' },
 ];
+
+// 模块顶层只跑一次（arch §5）：dump.created / task.completed 这两条规则在 sidepanel 上下文里生效
+registerDefaultEventRules(eventBus, () => {
+  const settings = useSettingsStore.getState().settings;
+  return {
+    registry: createDefaultToolRegistry(),
+    llm: createLlmDriver({ baseUrl: settings.baseUrl, apiKey: settings.apiKey }),
+    defaultModel: settings.model,
+  };
+});
 
 function App() {
   // activeTab 挂在 uiStore 而不是本地 state：reveal_card 工具需要从组件树外部切 tab（T14）
@@ -36,6 +50,13 @@ function App() {
     const todayKey = new Date().toISOString().slice(0, 10);
     const tasks = Object.values(useTasksStore.getState().tasks);
     useWorklogStore.getState().archiveIfNewDay(todayKey, tasks);
+
+    // alarm.eod 提醒（arch §5）：后台闹钟触发时面板可能是关着的，开面板时把攒下的提醒转成 toast
+    const { eodNudgeDate, dismissEodNudge } = useWorklogStore.getState();
+    if (eodNudgeDate) {
+      useUiStore.getState().notify('今天完成了一些活儿，要不要顺手写个日报？');
+      dismissEodNudge();
+    }
   }, []);
 
   return (

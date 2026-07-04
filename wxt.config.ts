@@ -10,7 +10,7 @@ export default defineConfig({
   manifest: {
     name: '派活儿',
     description: '领导把活儿甩给你，你把活儿派给 AI',
-    permissions: ['sidePanel', 'storage', 'contextMenus', 'clipboardWrite'],
+    permissions: ['sidePanel', 'storage', 'contextMenus', 'clipboardWrite', 'alarms'],
     action: {
       default_title: '派活儿',
     },

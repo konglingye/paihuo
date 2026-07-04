@@ -52,12 +52,13 @@ describe('buildDailySummary（纯函数：从任务算出某天的摘要）', ()
 describe('worklogStore（工作日志，spec §3.3）', () => {
   beforeEach(() => {
     fakeBrowser.reset();
-    useWorklogStore.setState({ entries: [], lastActiveDate: null });
+    useWorklogStore.setState({ entries: [], lastActiveDate: null, eodNudgeDate: null });
   });
 
   it('初始为空', () => {
     expect(useWorklogStore.getState().entries).toEqual([]);
     expect(useWorklogStore.getState().lastActiveDate).toBeNull();
+    expect(useWorklogStore.getState().eodNudgeDate).toBeNull();
   });
 
   it('recordDay 写入或覆盖指定日期的摘要（同一天调用两次不会重复）', () => {
@@ -118,5 +119,31 @@ describe('worklogStore（工作日志，spec §3.3）', () => {
 
     expect(useWorklogStore.getState().entries).toMatchObject([{ date: '2026-07-01' }]);
     expect(useWorklogStore.getState().lastActiveDate).toBe('2026-07-01');
+  });
+
+  describe('checkEodAlarm（arch §5 alarm.eod：今天有完成任务且没写日报才提醒）', () => {
+    it('今天有完成任务且没写日报：记下待展示的提醒', () => {
+      const tasks = [makeTask({ doneAt: new Date('2026-07-04T10:00:00').getTime() })];
+      useWorklogStore.getState().checkEodAlarm('2026-07-04', tasks, false);
+      expect(useWorklogStore.getState().eodNudgeDate).toBe('2026-07-04');
+    });
+
+    it('已经写过日报：不提醒', () => {
+      const tasks = [makeTask({ doneAt: new Date('2026-07-04T10:00:00').getTime() })];
+      useWorklogStore.getState().checkEodAlarm('2026-07-04', tasks, true);
+      expect(useWorklogStore.getState().eodNudgeDate).toBeNull();
+    });
+
+    it('今天没有完成任何任务：不提醒', () => {
+      useWorklogStore.getState().checkEodAlarm('2026-07-04', [], false);
+      expect(useWorklogStore.getState().eodNudgeDate).toBeNull();
+    });
+
+    it('dismissEodNudge 清空提醒', () => {
+      const tasks = [makeTask({ doneAt: new Date('2026-07-04T10:00:00').getTime() })];
+      useWorklogStore.getState().checkEodAlarm('2026-07-04', tasks, false);
+      useWorklogStore.getState().dismissEodNudge();
+      expect(useWorklogStore.getState().eodNudgeDate).toBeNull();
+    });
   });
 });
