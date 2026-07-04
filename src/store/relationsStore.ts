@@ -10,11 +10,22 @@ interface RelationsState {
   removeRelation: (id: string) => void;
 }
 
+/** taskIds 顺序不重要，比的是同一组任务——用排序后拼接的 key 判断"是不是同一条关联" */
+function taskIdsKey(taskIds: string[]): string {
+  return [...taskIds].sort().join('|');
+}
+
 export const useRelationsStore = create<RelationsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       relations: [],
       addRelation: (input) => {
+        // 整理官会在每次倒活时自动重跑（dump.created->auto-organize），只要相关任务还在，
+        // 同一对任务大概率会被反复建议——不去重会让关联横幅无限叠加一模一样的内容
+        const key = taskIdsKey(input.taskIds);
+        const existing = get().relations.find((r) => taskIdsKey(r.taskIds) === key);
+        if (existing) return existing;
+
         const relation: Relation = {
           id: crypto.randomUUID(),
           taskIds: input.taskIds,

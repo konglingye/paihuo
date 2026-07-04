@@ -25,6 +25,19 @@ describe('relationsStore', () => {
     expect(useRelationsStore.getState().relations).toEqual([]);
   });
 
+  it('addRelation 对完全相同的 taskIds 集合去重：返回已有的那条，不新建重复记录（真实使用中发现的 bug——每次倒活都会触发自动整理官，同一对任务反复被建议，之前会无限叠加出一模一样的关联横幅）', () => {
+    const first = useRelationsStore.getState().addRelation({ taskIds: ['t1', 't2'], reason: '第一次的说法' });
+    const second = useRelationsStore.getState().addRelation({ taskIds: ['t2', 't1'], reason: '第二次的说法，顺序还反了' });
+    expect(second.id).toBe(first.id);
+    expect(useRelationsStore.getState().relations).toHaveLength(1);
+  });
+
+  it('taskIds 集合不同则正常新建，不会被误判成重复', () => {
+    useRelationsStore.getState().addRelation({ taskIds: ['t1', 't2'], reason: 'x' });
+    useRelationsStore.getState().addRelation({ taskIds: ['t1', 't3'], reason: 'y' });
+    expect(useRelationsStore.getState().relations).toHaveLength(2);
+  });
+
   it('roundtrip：能从已有的 chrome.storage.local 数据水合出状态', async () => {
     await fakeBrowser.storage.local.set({
       'paihuo:relations': JSON.stringify({
