@@ -72,9 +72,11 @@ export function TaskCard({ taskId, toolName, toolUrl }: TaskCardProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const task = useTasksStore((s) => s.tasks[taskId]);
   const completeTask = useTasksStore((s) => s.completeTask);
+  const removeTask = useTasksStore((s) => s.removeTask);
   const reveal = useUiStore((s) => s.reveal);
   const { show } = useToast();
 
@@ -111,6 +113,11 @@ export function TaskCard({ taskId, toolName, toolUrl }: TaskCardProps) {
     if (done) return;
     completeTask(task.id);
     if (cardRef.current) burstFrom(cardRef.current, e.currentTarget);
+  }
+
+  function handleConfirmDelete() {
+    removeTask(task.id);
+    show('已删除这件活儿');
   }
 
   return (
@@ -199,6 +206,27 @@ export function TaskCard({ taskId, toolName, toolUrl }: TaskCardProps) {
               <Button variant="secondary" size="sm" onClick={handleComplete}>
                 标记完成
               </Button>
+            </div>
+          )}
+
+          {!deleteConfirming ? (
+            <button
+              type="button"
+              aria-label="删除这件活儿"
+              onClick={() => setDeleteConfirming(true)}
+              className="text-[11.5px] text-faint underline"
+            >
+              删除这件活儿
+            </button>
+          ) : (
+            <div className="flex items-center gap-3 text-[11.5px]">
+              <span className="text-red">确定要删除？没有撤销，数据会直接没掉。</span>
+              <Button variant="secondary" size="sm" className="!text-red" onClick={handleConfirmDelete}>
+                确定删除
+              </Button>
+              <button type="button" onClick={() => setDeleteConfirming(false)} className="text-sub">
+                取消
+              </button>
             </div>
           )}
         </div>

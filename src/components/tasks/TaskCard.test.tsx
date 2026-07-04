@@ -169,4 +169,50 @@ describe('TaskCard', () => {
       createSpy.mockRestore();
     });
   });
+
+  describe('删除任务（真实反馈：之前只能标记完成，没有真正删除的办法）', () => {
+    it('展开后能看到删除入口，点一下先要求二次确认，不会一点就删', () => {
+      renderCard();
+      fireEvent.click(screen.getByRole('button', { name: /整理今天的会议纪要/ }));
+
+      fireEvent.click(screen.getByRole('button', { name: '删除这件活儿' }));
+
+      expect(useTasksStore.getState().tasks[baseTask.id]).toBeDefined();
+      expect(screen.getByText(/确定要删除/)).toBeInTheDocument();
+    });
+
+    it('二次确认后才真正从 store 里移除', () => {
+      renderCard();
+      fireEvent.click(screen.getByRole('button', { name: /整理今天的会议纪要/ }));
+      fireEvent.click(screen.getByRole('button', { name: '删除这件活儿' }));
+
+      fireEvent.click(screen.getByRole('button', { name: '确定删除' }));
+
+      expect(useTasksStore.getState().tasks[baseTask.id]).toBeUndefined();
+    });
+
+    it('点"取消"退回正常状态，不删除', () => {
+      renderCard();
+      fireEvent.click(screen.getByRole('button', { name: /整理今天的会议纪要/ }));
+      fireEvent.click(screen.getByRole('button', { name: '删除这件活儿' }));
+
+      fireEvent.click(screen.getByRole('button', { name: '取消' }));
+
+      expect(useTasksStore.getState().tasks[baseTask.id]).toBeDefined();
+      expect(screen.queryByText(/确定要删除/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '删除这件活儿' })).toBeInTheDocument();
+    });
+
+    it('已完成的任务也能删除（不是只有待办才能删）', () => {
+      const doneTask: Task = { ...baseTask, id: 't4', status: 'done', doneAt: 1000 };
+      useTasksStore.setState({ tasks: { [doneTask.id]: doneTask } });
+      renderCard({ taskId: doneTask.id });
+      fireEvent.click(screen.getByRole('button', { name: /整理今天的会议纪要/ }));
+
+      fireEvent.click(screen.getByRole('button', { name: '删除这件活儿' }));
+      fireEvent.click(screen.getByRole('button', { name: '确定删除' }));
+
+      expect(useTasksStore.getState().tasks[doneTask.id]).toBeUndefined();
+    });
+  });
 });
