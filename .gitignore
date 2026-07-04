@@ -6,3 +6,5 @@ dist/
 *.log
 .env*
 docs/qa/*.png
+test-results/
+playwright-report/
