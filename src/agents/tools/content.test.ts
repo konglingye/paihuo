@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing';
 import { useFragmentsStore } from '@/src/store/fragmentsStore';
-import { readAttachmentTool } from './content';
+import { useTasksStore } from '@/src/store/tasksStore';
+import {
+  draftMessageTool,
+  draftUserPromptTool,
+  getPromptTemplateTool,
+  readAttachmentTool,
+} from './content';
 
 describe('read_attachment', () => {
   beforeEach(() => {
@@ -42,7 +48,7 @@ describe('read_attachment', () => {
     expect(combined).toBe(raw);
   });
 
-  it('chunk 超出范围时抛错（错误路径）', async () => {
+  it('chunk 超出范围时抛错（错误路径）', () => {
     const fragment = useFragmentsStore.getState().addFragment({ raw: '短文本' });
     expect(() => readAttachmentTool.handler({ fragmentId: fragment.id, chunk: 99 })).toThrow();
   });
@@ -60,5 +66,86 @@ describe('read_attachment', () => {
   it('schema 拒绝负数 chunk', () => {
     const parsed = readAttachmentTool.paramsSchema.safeParse({ fragmentId: 'f1', chunk: -1 });
     expect(parsed.success).toBe(false);
+  });
+});
+
+describe('get_prompt_template', () => {
+  it('按 taskType 返回四段骨架，含【】空槽', async () => {
+    const result = await getPromptTemplateTool.handler({ taskType: 'slide' });
+    expect(result.role).toBeTruthy();
+    expect(result.task).toContain('【');
+    expect(result.format).toBeTruthy();
+    expect(result.tone).toBeTruthy();
+  });
+
+  it('传已知 toolId 时把工具名带进角色段', async () => {
+    const result = await getPromptTemplateTool.handler({ taskType: 'slide', toolId: 'gamma' });
+    expect(result.role).toContain('Gamma');
+  });
+
+  it('toolId 不在目录内时优雅降级为通用骨架，不报错', async () => {
+    const result = await getPromptTemplateTool.handler({ taskType: 'write', toolId: 'not-in-catalog' });
+    expect(result.role).toBeTruthy();
+  });
+
+  it('5 个任务类型都有骨架', () => {
+    (['write', 'slide', 'data', 'comm', 'misc'] as const).forEach((taskType) => {
+      expect(() => getPromptTemplateTool.handler({ taskType })).not.toThrow();
+    });
+  });
+});
+
+describe('draft_user_prompt', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+    useTasksStore.setState({ tasks: {} });
+  });
+
+  it('给已存在的任务生成外部提示词', async () => {
+    const [task] = useTasksStore.getState().addTasks([
+      { title: '发布会 PPT', type: 'slide', fit: 'assist', toolId: 'gamma', saveMin: 90, fragmentId: 'f1' },
+    ]);
+    const result = await draftUserPromptTool.handler({ taskId: task.id });
+    expect(result.prompt).toContain('Gamma');
+    expect(result.prompt).toContain('【');
+  });
+
+  it('传入 slots 覆盖对应段落，未覆盖的段落保留默认空槽', async () => {
+    const [task] = useTasksStore.getState().addTasks([
+      { title: '写通知', type: 'comm', fit: 'full', saveMin: 10, fragmentId: 'f1' },
+    ]);
+    const result = await draftUserPromptTool.handler({
+      taskId: task.id,
+      slots: { task: '通知大家周五全员大会，下午 3 点，一号会议室' },
+    });
+    expect(result.prompt).toContain('周五全员大会');
+    expect(result.prompt).toContain('语气：得体');
+  });
+
+  it('任务不存在时抛错', () => {
+    expect(() => draftUserPromptTool.handler({ taskId: 'not-exist' })).toThrow();
+  });
+});
+
+describe('draft_message', () => {
+  it('nudge：催办小抄', async () => {
+    const result = await draftMessageTool.handler({
+      kind: 'nudge',
+      context: { taskTitle: '合同审核', recipient: '李哥' },
+    });
+    expect(result.message).toContain('李哥');
+    expect(result.message).toContain('合同审核');
+  });
+
+  it('howto：3 步教学', async () => {
+    const result = await draftMessageTool.handler({ kind: 'howto', context: { taskTitle: 'PPT 大纲' } });
+    expect(result.message).toContain('1.');
+    expect(result.message).toContain('2.');
+    expect(result.message).toContain('3.');
+  });
+
+  it('direct：可直接发送的话术', async () => {
+    const result = await draftMessageTool.handler({ kind: 'direct', context: { detail: '合同我已经发过去了' } });
+    expect(result.message).toBe('合同我已经发过去了');
   });
 });

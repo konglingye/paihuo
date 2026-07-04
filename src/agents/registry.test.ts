@@ -16,6 +16,9 @@ describe('createDefaultToolRegistry', () => {
         'link_tasks',
         'search_tool_catalog',
         'read_attachment',
+        'get_prompt_template',
+        'draft_user_prompt',
+        'draft_message',
       ].sort(),
     );
   });

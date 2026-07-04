@@ -20,6 +20,10 @@ export type ToolCatalogEntry = z.infer<typeof ToolCatalogEntrySchema>;
 
 const TOOL_CATALOG: ToolCatalogEntry[] = ToolCatalogEntrySchema.array().parse(toolCatalogData);
 
+export function findCatalogEntry(toolId: string): ToolCatalogEntry | undefined {
+  return TOOL_CATALOG.find((entry) => entry.id === toolId);
+}
+
 function matchScore(entry: ToolCatalogEntry, query: string): number {
   let score = 0;
   if (entry.name.toLowerCase().includes(query)) score += 2;

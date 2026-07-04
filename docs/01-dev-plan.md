@@ -61,8 +61,9 @@
 
 ### M3 核心循环：倒活→拆解→派活
 
-- [ ] **T10 内容与知识工具**：`read_attachment`（txt/md/pdf/docx/csv/xlsx 解析→分块）、附件白名单校验 UI、`get_prompt_template`、`draft_user_prompt`、`draft_message`。
+- [x] **T10 内容与知识工具**：`read_attachment`（txt/md/pdf/docx/csv/xlsx 解析→分块）、附件白名单校验 UI、`get_prompt_template`、`draft_user_prompt`、`draft_message`。
   DoD：解析器 fixture 单测；传 `.exe` 被拒 toast；分块读取单测。
+  ✅ 2026-07-04 验证方式：安装 pdfjs-dist/mammoth/xlsx，`src/content/parseAttachment.ts` 解析 txt/md/pdf/docx/csv/xlsx，测试用真实构造的最小 pdf（手写）/docx（jszip 现场打包）/xlsx（SheetJS 现场写出）fixture 验证，不 mock；发现 mammoth 实际不支持旧版二进制 .doc（只支持 OOXML .docx），已在解析失败时走友好报错路径；`src/content/attachmentWhitelist.ts` 白名单校验；`src/components/attachments/AttachButton.tsx` 拒收非白名单文件弹原型文案 toast，命中的解析后存入 fragmentsStore（RTL 组件测试 3 例）；`/components` dev 页临时演示区 + Playwright 用真实 .exe/.txt 文件走一遍拒收/解析全流程，截图 `docs/qa/T10-*.png`；`src/agents/tools/content.ts` 扩展 `get_prompt_template`（任务类型四段骨架+已知工具名插入角色段，未知 toolId 优雅降级）、`draft_user_prompt`（按任务生成外部提示词，slots 覆盖对应段落其余保留【】空槽）、`draft_message`（催办/教做法 3 步/直接可发三种小抄）；`src/agents/prompts/external/taskTypeTemplates.ts` 五个任务类型模板骨架；注册进默认工具表，orchestrator 白名单补上 draft_user_prompt/draft_message；`pnpm test`（33 文件 241 用例）/`pnpm compile`/`pnpm build` 全绿。遗留优化项：pdfjs/mammoth/xlsx 体积大（dev 页 chunk 1.3MB），按 dev-plan 风险备忘留给 T21 打磨时做动态 import 代码分割。
 - [ ] **T11 拆解官链路**：decomposer profile（契约=spec §6.1 schema）接倒活 UI：思考态流光两段文案（来自 loop 流式事件）→ 骨架 → 任务卡逐张入场；空槽【…】高亮渲染。
   DoD：mock 下点「拆解」产出与原型一致的 4 卡；契约校验失败走降级卡路径（单测）。
 - [ ] **T12 工具目录与卡片动作**：`assets/tools.json`（spec §5）+ `pnpm check:tools` URL 核验脚本；「复制提示词 · 打开工具」（clipboard+tabs）、「复制小抄」、「标记完成」动效。

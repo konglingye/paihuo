@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { IconSprite } from '@/src/components/icons/IconSprite';
 import { Icon, type IconName } from '@/src/components/icons/Icon';
 import { Button, Pill, Chip, Card, SegmentedTabs, Sheet, ToastProvider, useToast, ProgressRing } from '@/src/components/ui';
+import { AttachButton } from '@/src/components/attachments/AttachButton';
+import { useFragmentsStore } from '@/src/store';
 
 const ICON_NAMES: IconName[] = [
   'plane', 'sliders', 'mic', 'clip', 'copy', 'ext', 'check', 'chev', 'clock', 'spark',
@@ -24,6 +26,25 @@ function ToastDemo() {
     <Button variant="secondary" onClick={() => show('提示词已复制 — 粘贴到 DeepSeek 就能用')}>
       触发 toast
     </Button>
+  );
+}
+
+function AttachButtonDemo() {
+  const fragments = useFragmentsStore((s) => s.fragments);
+  return (
+    <div className="relative flex h-[200px] w-[404px] flex-col gap-2 overflow-hidden rounded-panel border border-hairsoft bg-white p-4 shadow-panel">
+      <div className="flex items-center gap-2">
+        <AttachButton />
+        <span className="text-[12px] text-sub">试试传 .exe（被拒）或 .txt/.pdf/.docx/.xlsx（真实解析）</span>
+      </div>
+      <div className="flex-1 space-y-1.5 overflow-y-auto text-[11.5px] text-sub">
+        {Object.values(fragments).map((f) => (
+          <div key={f.id} className="rounded-lg bg-wash px-2 py-1">
+            {f.attachments[0]?.name}：{f.raw.slice(0, 40)}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -116,6 +137,12 @@ function App() {
               <div className="p-4 text-[13px] text-sub">对话内容占位</div>
             </Sheet>
           </div>
+        </ToastProvider>
+      </Section>
+
+      <Section title="AttachButton（附件白名单）">
+        <ToastProvider>
+          <AttachButtonDemo />
         </ToastProvider>
       </Section>
     </div>

@@ -10,13 +10,22 @@ import type { Task } from '@/src/store/schema';
 
 /**
  * 小派（主对话）：终局是对话文本，没有 JSON 契约。
- * toolNames 目前只有已落地的任务库工具；draft_user_prompt/draft_message（T10）、
- * remember/recall（T15）、reveal_card/open_tool_site/dispatch（T14）会在对应任务里补进白名单。
+ * toolNames 目前是已落地的任务库+内容工具；remember/recall（T15）、
+ * reveal_card/open_tool_site/dispatch（T14）会在对应任务里补进白名单。
  */
 export function buildOrchestratorProfile(existingTasks: Task[]): AgentProfile {
   return {
     name: 'orchestrator',
-    toolNames: ['list_tasks', 'get_task', 'update_task', 'complete_task', 'create_tasks', 'read_attachment'],
+    toolNames: [
+      'list_tasks',
+      'get_task',
+      'update_task',
+      'complete_task',
+      'create_tasks',
+      'read_attachment',
+      'draft_user_prompt',
+      'draft_message',
+    ],
     maxTurns: 6,
     params: { temperature: 0.7 },
     systemPrompt: assembleSystemPrompt({

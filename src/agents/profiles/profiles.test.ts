@@ -90,7 +90,7 @@ describe('orchestrator profile', () => {
     expect(profile.outputContract).toBeUndefined();
   });
 
-  it('工具白名单包含当前已落地的任务库读写工具', () => {
+  it('工具白名单包含当前已落地的任务库+内容工具', () => {
     expect(profile.toolNames).toEqual([
       'list_tasks',
       'get_task',
@@ -98,6 +98,8 @@ describe('orchestrator profile', () => {
       'complete_task',
       'create_tasks',
       'read_attachment',
+      'draft_user_prompt',
+      'draft_message',
     ]);
   });
 });
