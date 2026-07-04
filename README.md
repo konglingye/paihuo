@@ -1,89 +1,168 @@
-# 派活儿 Paihuo
+# 派活儿 · Paihuo
 
-> **一句话**：浏览器侧边栏插件，帮不太会用 AI 的打工人——把任务倒进来，自动拆成清单，标注 AI 能帮多少、该用哪个工具、第一句话说什么；聊进度自动划卡；一键写日报/周报/月报。
-> **形态红线**：Chrome MV3 sidePanel · 无后端无账号 · 数据全本机 · **BYOK**（用户自己的 API key，产品负责把「注册→创建→复制→粘贴」引导到傻瓜级，绝不内置开发者的 key）。
+> 领导把活儿甩给你，你把活儿派给 AI。
 
-当前版本 **v0.1.0**（mock 全链路验证通过；真实模型效果尚待 T24 用真 key 冒烟评测，还没上架应用商店）。
+一个 Chrome MV3 侧边栏插件，帮助不太会用 AI 的打工人**自动拆解任务、选择合适的 AI 工具、用上现成的提示词、写日报周报**。无后端、无账号、BYOK（自带 API key）。
 
-## 安装（Chrome / Edge 通用）
+## ✨ 核心功能
 
-派活儿目前还没上架应用商店，需要用「开发者模式」手动装一次，装完之后跟普通插件一样正常用，不需要每次都这样。
+### 五动词工作流
 
-1. 拿到扩展包：自己跑一遍 `pnpm zip`，在 `.output/paihuo-0.1.0-chrome.zip` 拿到包；解压到任意一个你不会手滑删掉的文件夹。
-2. 浏览器地址栏打开 `chrome://extensions`（Edge 是 `edge://extensions`），右上角把「开发者模式」打开。
-3. 点「加载已解压的扩展程序」，选中第 1 步解压出来的文件夹。
-4. 加载成功后，扩展列表里会出现「派活儿」：
+- **倒活** · 文本、文件、语音多形态输入。支持粘贴 PDF、Word、Excel
+- **派活** · AI 自动拆成清单，标注能帮多少、该用哪个工具、第一句话说什么
+- **盯活** · 与小派对话改状态、教做法、发现能合并的活儿
+- **报活** · AI 秒写日报、周报、月报。量化省时时间
+- **循环** · 完成任务 → 写日报 → 倒新活儿。一个工作流走通全天的节奏
 
-   ![加载成功](docs/install/01-chrome-extensions-page.png)
+### 核心特性
 
-5. 点工具栏里的派活儿图标（或按快捷键 `Ctrl+Shift+Y`，Mac 是 `Command+Shift+Y`）打开侧边栏，第一次打开长这样：
+✅ **无后端** · 所有数据存本机浏览器（`chrome.storage.local`）  
+✅ **BYOK** · 用你自己的 API key、自己的额度。从不内置开发者的 key  
+✅ **隐私优先** · 没有云、没有账号、没有追踪  
+✅ **工具聚合** · 16+ 个智能体工具：任务库、工具目录、提示词模板、对话、记忆、汇报  
+✅ **侧边栏常驻** · Chrome MV3 sidePanel，随处可得  
 
-   ![总览页](docs/install/02-sidepanel-overview.png)
+## 📸 界面预览
 
-## 接上 AI，只需 3 步
+👉 **[打开交互式原型](docs/prototype.html)**（在浏览器中查看完整设计）
 
-侧边栏右上角点齿轮，跟着向导走一遍——全程不用离开这个面板，key 只存在你自己电脑的浏览器里，不经过任何第三方服务器：
+或下载 [`docs/prototype.html`](docs/prototype.html) 在本地浏览器打开。
 
-1. **选一家 AI 平台**——没有账号的话点「去注册·创建 API key」，DeepSeek 手机号就能注册，新用户送免费额度。
-
-   ![选平台](docs/install/03-onboarding-step1-platform.png)
-
-2. **把 key 粘贴到这里**——接口地址已经按平台自动填好，不用改。
-
-   ![粘贴 key](docs/install/04-onboarding-step2-key.png)
-
-3. **连接，挑个「会思考」的模型**——点「连接并拉取模型列表」，会自动帮你选中推荐的推理模型，再点「测试连接」确认打通。
-
-   ![已连通](docs/install/05-onboarding-step3-connected.png)
-
-连通之后就能用了：把领导甩给你的活儿倒进「活儿」页 → AI 拆成带工具和提示词的任务卡 → 复制提示词跳转对应工具 → 跟小派聊几句盯进度 → 收工时去「汇报」页一键出日报。
+**功能预览**：
+- **总览 Tab**：问候语 + 进度环 + 按类型计数 + 截止时间提醒 + 今日成果
+- **活儿 Tab**：倒活输入框 + 任务卡列表 + 关联建议横幅  
+- **汇报 Tab**：上传模板 + AI 写日报 + 生成输出
+- **对话（小派）**：dock 快捷 chips + 消息流 + 实时回复
 
 ---
 
-## 开发目标（Definition of Victory）
+## 🚀 快速开始
 
-> 以下内容面向要修改代码 / 继续开发的人；只是想用这个插件的话，看到上面就够了。
+### 前置要求
 
-一个可在 Chrome/Edge 开发者模式安装的 **v0.1.0 zip**：
+- Node.js 18+ 
+- pnpm
+- Chrome / Edge 浏览器
 
-1. 用户走完「接上 AI，只需 3 步」向导（选平台→粘 key→连接选推理模型）后，能**真实**完成：倒活（文字/文件/截图）→ 拆解成带工具与提示词的任务卡 → 复制提示词跳转工具 → 对话盯活 → 生成日报/周报（可套公司模板）。
-2. **完整智能体，不是散调用**：所有 AI 能力经统一 harness（agent loop / 工具编排 / 提示词装配 / 上下文压缩 / 事件触发 / trace），`#/trace` 可回放每次 run，UI 全程可见 agent 在干嘛（见 `docs/02-agent-architecture.md`）。
-3. mock 模式（`VITE_PAIHUO_MOCK=1`）下 `pnpm e2e` 全链路绿 + `pnpm eval` 评测套件绿。
-4. 权限最小化、无后端；spec §9 范围之外一律不做。
+### 安装
 
-## 整体规划（一页纸）
+\`\`\`bash
+# 1. 克隆仓库
+git clone https://github.com/konglingye/paihuo.git
+cd paihuo
 
-| 里程碑 | 任务 | 出口标准 |
-|---|---|---|
-| M0 地基 | T01-T04 脚手架 / 令牌组件 / 数据层 / LLM 传输层+mock | 面板壳跑通，单测绿 |
-| **M1 Harness 核心** | T05-T08 工具注册执行 / Agent Loop / 上下文管理 / 提示词装配+trace | 智能体心脏可跑：mock 多轮工具调用 + `#/trace` 可回放 |
-| M2 接 AI | T09 三步向导（注册引导/拉模型/推理推荐/测连接） | mock 全流程可走，错误态友好 |
-| M3 核心循环 | T10-T13 内容工具 / 拆解官链路 / 工具目录 / 整理官+筛选 | 核心价值可演示 |
-| M4 盯活 | T14-T17 小派 orchestrator / 长期记忆 / 总览 / 事件编排 | 「纪要发完了」自动划卡，agent 活动全程可见 |
-| M5 报活 | T18 汇报官 + 模板 | 五动词闭环 |
-| M6 收口 | T19-T23 评测套件 / 右键 / 打磨 / e2e / 打包 | `pnpm e2e` + `pnpm eval` 绿，zip 装上即用 |
-| ⛔ 停点 | T24 真 key 冒烟+真模型评测 · T25 商店上架 | **必须先问用户** |
+# 2. 安装依赖
+pnpm install
 
-预估：M0→M6（mock 全绿）约 7-10 个全职循环日；T24 之后按真实模型评测分迭代提示词（契约不变）。
+# 3. 本地开发构建
+pnpm dev
+# 输出：.wxt/chrome-mv3/ 目录
+\`\`\`
 
-## 怎么执行（给 Claude / Sonnet 5）
+### 在 Chrome 里加载
 
-**启动指令（用户粘贴这句即可）：**
+1. 打开 \`chrome://extensions\`
+2. 右上角打开「开发者模式」
+3. 「加载已解包的扩展程序」→ 选择 \`.wxt/chrome-mv3\` 目录
+4. Chrome 工具栏会多出派活儿图标，点击打开侧边栏
 
-> 读 CLAUDE.md、docs/00-product-spec.md、docs/01-dev-plan.md，按 Goal 运行协议从 T01 开始持续循环，直到触发停点或全部完成。
+### 接上 AI
 
-循环规则（详见 `CLAUDE.md`）：取最低编号 ready 任务 → 简述方案 → TDD → **真实验证达 DoD**（UI 任务必须起真实扩展，禁止只跑单测宣称完成）→ 在 `docs/01-dev-plan.md` 勾掉并追加 `✅ 日期 验证方式` → git commit → 下一个。LLM 功能一律先跑 mock，真 key 只在 T17（先问用户要）。连败 3 次 / 要花钱 / 要发布 / 想超出 spec → 停下问用户。
+1. 派活儿设置 → 选平台（DeepSeek / Kimi / 自定义 API）
+2. 粘 API key → 连接
+3. 拉取模型列表 → 完成
 
-## 文件地图
+**💡 Tip**：用 \`VITE_PAIHUO_MOCK=1 pnpm dev\` 跑 mock 模式（不消耗真实 API）
 
-| 文件 | 角色 |
-|---|---|
-| `README.md` | 本文：目标、总规划、启动方式 |
-| `CLAUDE.md` | 执行协议：Goal 循环、验证纪律、停点、技术栈锁定 |
-| `docs/00-product-spec.md` | 产品规格 SSOT：逐屏规格、数据模型、四个 Agent Profile 行为契约、工具目录、平台表、范围边界 |
-| `docs/02-agent-architecture.md` | **智能体机制 SSOT**：harness 循环、工具编排、提示词装配、上下文管理、事件、trace、evals |
-| `docs/01-dev-plan.md` | 任务清单 T01-T25：每个带 DoD 与验证方式 |
-| `prototype/paihuo-prototype.html` | **UI/UX 像素级权威**（自包含，浏览器直接打开对照；豆包蓝设计令牌在文件头 `:root`） |
-| `docs/install/*.png` | 本文顶部「安装」「接上 AI」两节用的截图 |
-| `docs/qa/*.png` | 每个任务的验证截图（本地留存，不进 git，体积会失控） |
-| `e2e/`、`playwright.config.ts` | `pnpm e2e`：mock 全链路冒烟（配置→倒活→拆解→筛选→对话→汇报→重启数据仍在→trace） |
+## 🏗️ 技术架构
+
+### Agent Harness（核心）
+
+派活儿是一个**完整的浏览器内 AI 智能体系统**，所有 LLM 能力都过同一个 harness 运行——统一循环、统一工具、统一上下文、统一观测。UI 组件**禁止**裸调 chat completions。
+
+详见 [docs/02-agent-architecture.md](docs/02-agent-architecture.md)
+
+### 技术栈
+
+- **框架**：WXT (MV3)
+- **UI**：React 18 + TypeScript
+- **样式**：Tailwind CSS
+- **状态**：Zustand (persist → chrome.storage.local)
+- **校验**：Zod (工具参数 + 输出契约)
+- **测试**：Vitest + Playwright
+- **文本处理**：pdfjs-dist / mammoth / xlsx
+
+## 📂 目录结构
+
+\`\`\`
+src/agents/
+├─ harness/           # Agent Loop / Context / Tools / Trace
+├─ profiles/          # 四个 Profile
+├─ prompts/           # 提示词块
+├─ tools/             # 工具实现
+├─ memory/            # 用户画像 / 工作日志
+└─ events.ts          # 事件编排
+
+src/components/       # React UI
+src/mocks/            # Mock fixtures
+src/assets/           # tools.json
+
+evals/                # 金标准评测
+docs/                 # 文档
+prototype/            # UI 原型
+\`\`\`
+
+## 🧪 测试
+
+### 单元测试
+
+\`\`\`bash
+pnpm test              # 跑 vitest
+pnpm test --ui        # 打开测试 UI
+\`\`\`
+
+### 评测
+
+\`\`\`bash
+pnpm eval              # 用 mock fixtures 跑整链评测
+\`\`\`
+
+### E2E（需要 API key）
+
+\`\`\`bash
+OPENAI_API_KEY=sk-xxx OPENAI_BASE_URL=xxx pnpm playwright
+\`\`\`
+
+## 📖 文档
+
+- [README](README.md) — 项目介绍
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 贡献指南
+- [docs/00-product-spec.md](docs/00-product-spec.md) — 产品规格
+- [docs/01-dev-plan.md](docs/01-dev-plan.md) — 开发计划
+- [docs/02-agent-architecture.md](docs/02-agent-architecture.md) — 智能体架构设计
+
+## 🤝 贡献
+
+欢迎 issue、PR、反馈和改进建议！详见 [CONTRIBUTING.md](CONTRIBUTING.md)
+
+### 开发工作流
+
+1. \`pnpm dev\` 启动本地扩展
+2. 改代码 → Chrome 自动刷新
+3. \`pnpm test --watch\` 跑单测
+4. 提交前：\`pnpm lint && pnpm type-check\`
+
+## 📝 License
+
+MIT License — 自由使用、修改、分发。详见 [LICENSE](LICENSE) 文件。
+
+## 📞 支持
+
+- 📖 [文档](docs/)
+- 🐛 [Issue](https://github.com/konglingye/paihuo/issues)
+- 💬 [Discussions](https://github.com/konglingye/paihuo/discussions)
+
+---
+
+**派活儿** · 帮打工人把活儿派给 AI  
+Made with ❤️ by Kong
