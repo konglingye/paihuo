@@ -100,6 +100,8 @@ export const RelationSchema = z.object({
   id: z.string(),
   taskIds: z.array(z.string()).min(2),
   reason: z.string(),
+  /** 拆解官批量产出关联时附带的行动建议；link_tasks 工具单条记录时没有 */
+  suggestion: z.string().optional(),
   createdAt: z.number(),
 });
 export type Relation = z.infer<typeof RelationSchema>;

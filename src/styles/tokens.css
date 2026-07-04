@@ -49,3 +49,10 @@
   stroke-linejoin: round;
   vertical-align: -3px;
 }
+
+/* 思考态流光文字（原型 .ai-text） */
+@keyframes aiflow {
+  to {
+    background-position: -200% 0;
+  }
+}

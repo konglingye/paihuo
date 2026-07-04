@@ -11,10 +11,10 @@ describe('App', () => {
     expect(screen.getByText('总览面板占位')).toBeInTheDocument();
   });
 
-  it('点击「活儿」tab 切到活儿面板', () => {
+  it('点击「活儿」tab 切到倒活面板', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('tab', { name: '活儿' }));
     expect(screen.getByRole('tab', { name: '活儿' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('活儿面板占位')).toBeInTheDocument();
+    expect(screen.getByLabelText('任务输入')).toBeInTheDocument();
   });
 });

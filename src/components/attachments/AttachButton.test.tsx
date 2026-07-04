@@ -57,4 +57,20 @@ describe('AttachButton', () => {
     renderWithToast();
     expect(screen.getByRole('button', { name: '上传文件' })).toBeInTheDocument();
   });
+
+  it('传了 onFile 时接管解析结果，不自动写入 fragmentsStore（供倒活面板攒起来一起提交）', async () => {
+    const files: { name: string }[] = [];
+    render(
+      <ToastProvider>
+        <AttachButton onFile={(f) => files.push(f)} />
+      </ToastProvider>,
+    );
+    const file = new File(['随手记的一句话'], 'note.txt', { type: 'text/plain' });
+    fireFileChange(file);
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(files).toEqual([{ name: 'note.txt', parsed: { text: '随手记的一句话', isImage: false } }]);
+    expect(useFragmentsStore.getState().fragments).toEqual({});
+  });
 });
