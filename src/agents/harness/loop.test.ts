@@ -274,4 +274,64 @@ describe('runAgent', () => {
     );
     expect(deltas).toEqual(['流式增量']);
   });
+
+  describe('多轮对话续接（history）', () => {
+    it('options.history 会续接在 system 之后、本轮 input 之前', async () => {
+      let seenMessages: unknown[] = [];
+      const driver: LlmDriver = async (messages) => {
+        seenMessages = messages;
+        return { text: '收到', toolCalls: [] };
+      };
+      await runAgent(
+        baseProfile(),
+        '第二句话',
+        { registry: makeRegistry(), llm: driver, defaultModel: 'mock' },
+        {
+          history: [
+            { role: 'user', content: '第一句话' },
+            { role: 'assistant', content: '第一句的回复' },
+          ],
+        },
+      );
+
+      expect(seenMessages).toEqual([
+        { role: 'system', content: '你是测试用的 profile' },
+        { role: 'user', content: '第一句话' },
+        { role: 'assistant', content: '第一句的回复' },
+        { role: 'user', content: '第二句话' },
+      ]);
+    });
+
+    it('不传 history 时行为和以前一样：只有 system + 本轮 input', async () => {
+      let seenMessages: unknown[] = [];
+      const driver: LlmDriver = async (messages) => {
+        seenMessages = messages;
+        return { text: '收到', toolCalls: [] };
+      };
+      await runAgent(baseProfile(), '只有一句话', { registry: makeRegistry(), llm: driver, defaultModel: 'mock' });
+
+      expect(seenMessages).toEqual([
+        { role: 'system', content: '你是测试用的 profile' },
+        { role: 'user', content: '只有一句话' },
+      ]);
+    });
+  });
+
+  describe('onToolCall 活动回调', () => {
+    it('执行工具前上抛这一批调用（活动指示用），文本终局轮不触发', async () => {
+      const { driver } = scriptedDriver([
+        { text: '', toolCalls: [{ id: 'c1', name: 'echo', args: { text: 'hi' } }] },
+        { text: '好了', toolCalls: [] },
+      ]);
+      const calls: { name: string; args: unknown }[][] = [];
+      await runAgent(
+        baseProfile(),
+        'x',
+        { registry: makeRegistry(), llm: driver, defaultModel: 'mock' },
+        { onToolCall: (batch) => calls.push(batch) },
+      );
+
+      expect(calls).toEqual([[{ name: 'echo', args: { text: 'hi' } }]]);
+    });
+  });
 });

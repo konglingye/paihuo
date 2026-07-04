@@ -1,5 +1,5 @@
 import { LlmError, type StreamChatCompletion } from '@/src/llm/types';
-import { findFixture } from './fixtures';
+import { findFixture, type LlmFixtureStep } from './fixtures';
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -25,7 +25,12 @@ export const mockStreamChatCompletion: StreamChatCompletion = async (params, cal
 
   const lastUserMessage = [...params.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
   const fixture = findFixture(lastUserMessage);
-  const chunks = fixture.respond ? fixture.respond(lastUserMessage) : (fixture.chunks ?? []);
+  const steps: LlmFixtureStep[] = fixture.steps ?? [{ chunks: fixture.chunks, respond: fixture.respond }];
+  // 多轮剧本按"已经拿到的 tool 结果数"选对应 step——每次都重新 match 同一个 fixture，靠这个数区分轮次
+  const toolResultCount = params.messages.filter((m) => m.role === 'tool').length;
+  const step = steps[Math.min(toolResultCount, steps.length - 1)];
+
+  const chunks = step.respond ? step.respond(lastUserMessage, params.messages) : (step.chunks ?? []);
 
   let content = '';
   for (const chunk of chunks) {
@@ -34,5 +39,11 @@ export const mockStreamChatCompletion: StreamChatCompletion = async (params, cal
     callbacks.onDelta?.(chunk);
   }
   if (fixture.usage) callbacks.onUsage?.(fixture.usage);
-  return { content, usage: fixture.usage };
+
+  const rawToolCalls = typeof step.toolCalls === 'function' ? step.toolCalls(lastUserMessage, params.messages) : (step.toolCalls ?? []);
+  const toolCalls = rawToolCalls.length
+    ? rawToolCalls.map((tc, i) => ({ id: `mock-tool-${toolResultCount}-${i}`, name: tc.name, arguments: JSON.stringify(tc.args) }))
+    : undefined;
+
+  return { content, usage: fixture.usage, toolCalls };
 };

@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import { Icon } from '@/src/components/icons/Icon';
 import { Pill, Button, useToast } from '@/src/components/ui';
-import { useTasksStore } from '@/src/store';
+import { useTasksStore, useUiStore } from '@/src/store';
 import { cn } from '@/src/lib/cn';
 import type { Task } from '@/src/store/schema';
 
@@ -24,6 +24,7 @@ const COPIED_STATE_MS = 2600;
 const BURST_PARTICLES = 6;
 const BURST_RADIUS_PX = 22;
 const BURST_DURATION_MS = 600;
+const FLASH_DURATION_MS = 1800;
 
 /** 用户必须补的信息一律写成【…】空槽，这里渲染成高亮 mark（原型 .slot） */
 function renderPromptWithSlots(text: string) {
@@ -77,10 +78,22 @@ export interface TaskCardProps {
 export function TaskCard({ taskId, toolName, toolUrl }: TaskCardProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [flash, setFlash] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const task = useTasksStore((s) => s.tasks[taskId]);
   const completeTask = useTasksStore((s) => s.completeTask);
+  const reveal = useUiStore((s) => s.reveal);
   const { show } = useToast();
+
+  // reveal_card 工具（小派对话里跳卡）命中本卡时：展开+滚进视野+临时高亮，对应原型 .card.flash
+  useEffect(() => {
+    if (reveal?.taskId !== taskId) return;
+    setOpen(true);
+    setFlash(true);
+    cardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const timer = setTimeout(() => setFlash(false), FLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [reveal?.taskId, reveal?.nonce, taskId]);
 
   if (!task) return null;
 
@@ -108,7 +121,14 @@ export function TaskCard({ taskId, toolName, toolUrl }: TaskCardProps) {
   }
 
   return (
-    <article ref={cardRef} className="relative mb-2 rounded-card border border-hairsoft bg-white shadow-card transition hover:border-hair hover:shadow-lift">
+    <article
+      ref={cardRef}
+      className={cn(
+        'relative mb-2 rounded-card border border-hairsoft bg-white shadow-card transition hover:border-hair hover:shadow-lift',
+        flash && 'border-[rgba(61,111,252,.55)] shadow-[0_0_0_3.5px_rgba(61,111,252,.13)]',
+      )}
+    >
+
       <div
         role="button"
         tabIndex={0}

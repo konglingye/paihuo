@@ -39,6 +39,10 @@ export interface RunAgentOptions {
   signal?: AbortSignal;
   /** 文本增量实时上抛给 UI（活动指示） */
   onDelta?: (text: string) => void;
+  /** 每轮实际执行前上抛这一批工具调用（活动指示：UI 据此拼"正在…"短句），只读/写/ui/external 都会触发 */
+  onToolCall?: (calls: { name: string; args: unknown }[]) => void;
+  /** 多轮对话的既往轮次（不含 system），续接在 system 之后、本轮 input 之前——orchestrator 聊天场景用 */
+  history?: ChatMessage[];
 }
 
 function delay(ms: number): Promise<void> {
@@ -106,6 +110,7 @@ export async function runAgent(
 
   const messages: ChatMessage[] = [
     { role: 'system', content: profile.systemPrompt },
+    ...(options.history ?? []),
     { role: 'user', content: input },
   ];
   const tools = deps.registry.toJsonSchemaList(profile.toolNames);
@@ -148,6 +153,8 @@ export async function runAgent(
     };
     idleCount = isIdleTurn(signature, previousSignature) ? idleCount + 1 : 0;
     previousSignature = signature;
+
+    options.onToolCall?.(cappedToolCalls.map((tc) => ({ name: tc.name, args: tc.args })));
 
     const toolResults = await executeToolCalls(
       deps.registry,

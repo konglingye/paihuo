@@ -10,8 +10,7 @@ import type { Task } from '@/src/store/schema';
 
 /**
  * 小派（主对话）：终局是对话文本，没有 JSON 契约。
- * toolNames 目前是已落地的任务库+内容工具；remember/recall（T15）、
- * reveal_card/open_tool_site/dispatch（T14）会在对应任务里补进白名单。
+ * toolNames 是已落地的任务库+内容工具+ui工具+调度；remember/recall 留给 T15。
  */
 export function buildOrchestratorProfile(existingTasks: Task[]): AgentProfile {
   return {
@@ -25,6 +24,10 @@ export function buildOrchestratorProfile(existingTasks: Task[]): AgentProfile {
       'read_attachment',
       'draft_user_prompt',
       'draft_message',
+      'reveal_card',
+      'notify',
+      'open_tool_site',
+      'dispatch',
     ],
     maxTurns: 6,
     params: { temperature: 0.7 },

@@ -1,10 +1,13 @@
-import { useState } from 'react';
 import { IconSprite } from '@/src/components/icons/IconSprite';
 import { Icon } from '@/src/components/icons/Icon';
 import { useUiStore } from '@/src/store';
 import { SettingsSheet } from '@/src/components/settings/SettingsSheet';
 import { DumpPanel } from '@/src/components/dump/DumpPanel';
 import { ToastProvider } from '@/src/components/ui';
+import { ChatDock } from '@/src/components/chat/ChatDock';
+import { ChatSheet } from '@/src/components/chat/ChatSheet';
+import { NotifyBridge } from '@/src/components/chat/NotifyBridge';
+import { useOrchestratorChat } from '@/src/components/chat/useOrchestratorChat';
 
 type TabId = 'overview' | 'jobs' | 'report';
 
@@ -15,15 +18,22 @@ const TABS: { id: TabId; label: string }[] = [
 ];
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  // activeTab 挂在 uiStore 而不是本地 state：reveal_card 工具需要从组件树外部切 tab（T14）
+  const activeTab = useUiStore((s) => s.activeTab);
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
   const settingsOpen = useUiStore((s) => s.settingsOpen);
   const openSettings = useUiStore((s) => s.openSettings);
   const closeSettings = useUiStore((s) => s.closeSettings);
+  const chatOpen = useUiStore((s) => s.chatOpen);
+  const openChat = useUiStore((s) => s.openChat);
+  const closeChat = useUiStore((s) => s.closeChat);
+  const chat = useOrchestratorChat();
 
   return (
     <ToastProvider>
       <div className="relative flex h-screen flex-col overflow-hidden bg-slate-50 text-ink">
         <IconSprite />
+        <NotifyBridge />
         <header className="flex items-center justify-between border-b border-hairsoft px-4 py-3">
           <span className="text-base font-semibold">派活儿</span>
           <button
@@ -51,11 +61,22 @@ function App() {
             </button>
           ))}
         </nav>
-        <main className="flex-1 overflow-y-auto">
+        <main className={`flex-1 overflow-y-auto ${activeTab !== 'report' ? 'pb-24' : ''}`}>
           {activeTab === 'overview' && <div className="p-4">总览面板占位</div>}
           {activeTab === 'jobs' && <DumpPanel />}
           {activeTab === 'report' && <div className="p-4">汇报面板占位</div>}
         </main>
+        {activeTab !== 'report' && (
+          <ChatDock busy={chat.busy} onSend={(text) => { openChat(); void chat.send(text); }} />
+        )}
+        <ChatSheet
+          open={chatOpen}
+          onClose={closeChat}
+          messages={chat.messages}
+          busy={chat.busy}
+          activity={chat.activity}
+          onSend={(text, attachment) => void chat.send(text, attachment)}
+        />
         <SettingsSheet open={settingsOpen} onClose={closeSettings} />
       </div>
     </ToastProvider>

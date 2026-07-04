@@ -6,6 +6,8 @@ const INITIAL = {
   taskFilter: 'all',
   chatOpen: false,
   settingsOpen: false,
+  reveal: null,
+  notification: null,
 } as const;
 
 describe('uiStore', () => {
@@ -39,5 +41,23 @@ describe('uiStore', () => {
     expect(useUiStore.getState().settingsOpen).toBe(true);
     useUiStore.getState().closeSettings();
     expect(useUiStore.getState().settingsOpen).toBe(false);
+  });
+
+  it('revealTask 切到活儿 tab 并记录目标任务 id，nonce 递增', () => {
+    useUiStore.getState().setActiveTab('report');
+    useUiStore.getState().revealTask('t1');
+    expect(useUiStore.getState().activeTab).toBe('jobs');
+    expect(useUiStore.getState().reveal).toMatchObject({ taskId: 't1', nonce: 1 });
+
+    useUiStore.getState().revealTask('t1');
+    expect(useUiStore.getState().reveal).toMatchObject({ taskId: 't1', nonce: 2 });
+  });
+
+  it('notify 记录待展示的提醒文本，nonce 递增（同样的文本也能重新触发）', () => {
+    useUiStore.getState().notify('活儿有点多，喝口水');
+    expect(useUiStore.getState().notification).toMatchObject({ text: '活儿有点多，喝口水', nonce: 1 });
+
+    useUiStore.getState().notify('活儿有点多，喝口水');
+    expect(useUiStore.getState().notification).toMatchObject({ text: '活儿有点多，喝口水', nonce: 2 });
   });
 });

@@ -1,13 +1,29 @@
-import type { Usage } from '@/src/llm/types';
+import type { ChatMessage, Usage } from '@/src/llm/types';
+
+export interface LlmFixtureToolCall {
+  name: string;
+  args: unknown;
+}
+
+export interface LlmFixtureStep {
+  /** 分片模拟——每个字符串是一次 onDelta 增量 */
+  chunks?: string[];
+  /** 需要根据输入动态拼答案时用这个（比如从状态快照里抠出真实 task id），优先于 chunks */
+  respond?: (lastUserMessage: string, messages: ChatMessage[]) => string[];
+  /** 这一步模拟的工具调用；静态数组或根据消息动态生成（比如从 system 里的状态快照抠真实 task id） */
+  toolCalls?: LlmFixtureToolCall[] | ((lastUserMessage: string, messages: ChatMessage[]) => LlmFixtureToolCall[]);
+}
 
 export interface LlmFixture {
   id: string;
   /** 命中最后一条用户消息即选用该 fixture；未命中任何 fixture 时退回 DEFAULT_FIXTURE */
   match?: (lastUserMessage: string) => boolean;
-  /** 分片模拟——每个字符串是一次 onDelta 增量 */
+  /** 分片模拟——每个字符串是一次 onDelta 增量。单轮场景的简写，等价于 steps: [{ chunks }] */
   chunks?: string[];
-  /** 需要根据输入动态拼答案时用这个（比如从状态快照里抠出真实 task id），优先于 chunks */
-  respond?: (lastUserMessage: string) => string[];
+  /** 需要根据输入动态拼答案时用这个，优先于 chunks。单轮场景的简写，等价于 steps: [{ respond }] */
+  respond?: (lastUserMessage: string, messages: ChatMessage[]) => string[];
+  /** 多轮场景（比如先调工具、拿到结果后再给文本结论）用这个；每轮按"已经产生的 tool 结果数"挑对应 step */
+  steps?: LlmFixtureStep[];
   usage?: Usage;
   /** 每个分片之间的模拟延迟（毫秒），默认 10 */
   delayMs?: number;
@@ -80,18 +96,57 @@ const DECOMPOSER_LAUNCH_EVENT_OUTPUT = {
 const decomposerJsonText = JSON.stringify(DECOMPOSER_LAUNCH_EVENT_OUTPUT);
 const decomposerMid = Math.floor(decomposerJsonText.length / 2);
 
-/** 整理官状态快照块里一行形如 "- <id> [status] <title> fit=..."，从里面抠出指定标题对应的真实 task id */
+/** 状态快照块里一行形如 "- <id> [status] <title> fit=..."，从里面抠出指定标题对应的真实 task id */
 function findTaskIdByTitleFragment(stateSnapshot: string, titleFragment: string): string | undefined {
   const line = stateSnapshot.split('\n').find((l) => l.includes(titleFragment));
   return line?.match(/^- (\S+) /)?.[1];
 }
 
+/** 小派（orchestrator）的状态快照在 system 提示词里（profile 组装时就定好了），不在 user 消息里，得从这里抠 */
+function findTaskIdInSystemPrompt(messages: ChatMessage[], titleFragment: string): string | undefined {
+  const systemText = messages.find((m) => m.role === 'system')?.content ?? '';
+  return findTaskIdByTitleFragment(systemText, titleFragment);
+}
+
 export const FIXTURES: LlmFixture[] = [
   {
-    id: 'meeting-notes-done',
+    id: 'orchestrator-meeting-done',
     match: (msg) => msg.includes('纪要') && msg.includes('发完'),
-    chunks: ['真棒，', '这件事我先帮你划掉。', '接下来手里还有 3 件，要不要先看看今天能顺手做完的？'],
+    // 第 1 步：先划掉对应任务；第 2 步（工具结果已回来）：给出结论文本，对应 arch §6 的活动指示+划卡剧本
+    steps: [
+      {
+        toolCalls: (_msg, messages) => {
+          const id = findTaskIdInSystemPrompt(messages, '会议纪要');
+          return id ? [{ name: 'complete_task', args: { id } }] : [];
+        },
+      },
+      {
+        chunks: ['真棒，', '「会议纪要」给你划掉了 ✓ 赶在下班前搞定，稳。', '剩下的活儿里，建议下一个做「发布会宣传文案」——AI 能直接出两版初稿，顺利的话 5 分钟搞定。'],
+      },
+    ],
     usage: { promptTokens: 40, completionTokens: 24, totalTokens: 64 },
+  },
+  {
+    id: 'orchestrator-ppt-howto',
+    match: (msg) => msg.includes('PPT') && (msg.includes('不知道') || msg.includes('怎么') || msg.includes('从哪')),
+    // 第 1 步：先带用户跳到那张卡；第 2 步：给 3 步教学
+    steps: [
+      {
+        toolCalls: (_msg, messages) => {
+          const id = findTaskIdInSystemPrompt(messages, '发布会 PPT');
+          return id ? [{ name: 'reveal_card', args: { taskId: id } }] : [];
+        },
+      },
+      {
+        chunks: [
+          '最忌讳直接打开 PPT 软件硬想 :) 分三步：',
+          '① 5 分钟定 3 个关键信息：新品卖点、政策要点、时间地点；',
+          '② 用配好的提示词让 Kimi 出大纲，你只管删改；',
+          '③ 满意了再让它逐页填内容。',
+        ],
+      },
+    ],
+    usage: { promptTokens: 50, completionTokens: 30, totalTokens: 80 },
   },
   {
     id: 'decomposer-launch-event',

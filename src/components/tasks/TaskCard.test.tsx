@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { fakeBrowser } from 'wxt/testing';
 import { browser } from 'wxt/browser';
-import { useTasksStore } from '@/src/store';
+import { useTasksStore, useUiStore } from '@/src/store';
 import { ToastProvider } from '@/src/components/ui';
 import { TaskCard } from './TaskCard';
 import type { Task } from '@/src/store/schema';
@@ -34,10 +34,12 @@ describe('TaskCard', () => {
   beforeEach(() => {
     fakeBrowser.reset();
     useTasksStore.setState({ tasks: { [baseTask.id]: baseTask } });
+    useUiStore.setState({ reveal: null });
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
       configurable: true,
     });
+    Element.prototype.scrollIntoView = vi.fn();
   });
 
   it('渲染标题、due pill、fit pill、类型 tag', () => {
@@ -112,6 +114,42 @@ describe('TaskCard', () => {
       expect(createSpy).toHaveBeenCalledWith({ url: 'https://www.doubao.com' });
       expect(await screen.findByText(/提示词已复制 — 粘贴到 豆包 就能用/)).toBeInTheDocument();
       createSpy.mockRestore();
+    });
+  });
+
+  describe('reveal_card 高亮（uiStore.reveal）', () => {
+    it('reveal.taskId 命中本卡时自动展开、滚动进视野、加高亮样式', () => {
+      const { container } = renderCard();
+      act(() => {
+        useUiStore.getState().revealTask(baseTask.id);
+      });
+
+      expect(screen.getByText('下午渠道会的结论和待办')).toBeInTheDocument(); // 已展开
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+      expect(container.querySelector('article')).toHaveClass('border-[rgba(61,111,252,.55)]');
+    });
+
+    it('高亮一段时间后自动消退', () => {
+      vi.useFakeTimers();
+      const { container } = renderCard();
+      act(() => {
+        useUiStore.getState().revealTask(baseTask.id);
+      });
+      expect(container.querySelector('article')).toHaveClass('border-[rgba(61,111,252,.55)]');
+
+      act(() => {
+        vi.advanceTimersByTime(1800);
+      });
+      expect(container.querySelector('article')).not.toHaveClass('border-[rgba(61,111,252,.55)]');
+      vi.useRealTimers();
+    });
+
+    it('reveal.taskId 指向别的任务时不高亮', () => {
+      const { container } = renderCard();
+      act(() => {
+        useUiStore.getState().revealTask('other-task');
+      });
+      expect(container.querySelector('article')).not.toHaveClass('border-[rgba(61,111,252,.55)]');
     });
   });
 

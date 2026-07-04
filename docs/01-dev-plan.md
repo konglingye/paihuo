@@ -76,8 +76,9 @@
 
 ### M4 盯活：小派 orchestrator
 
-- [ ] **T14 主对话 agent**：orchestrator profile 接对话 UI（dock+抽屉+流式+建议 chips+附件消息）；`dispatch` 委派（深度≤1）；ui 工具（reveal_card/notify/open_tool_site 含用户手势门）；**活动指示**（状态短句实时来自工具调用，arch §6）。
+- [x] **T14 主对话 agent**：orchestrator profile 接对话 UI（dock+抽屉+流式+建议 chips+附件消息）；`dispatch` 委派（深度≤1）；ui 工具（reveal_card/notify/open_tool_site 含用户手势门）；**活动指示**（状态短句实时来自工具调用，arch §6）。
   DoD：mock 剧本：「会议纪要发完了」→ complete_task 划卡+进度环；「PPT 怎么开始」→ 3 步教学+跳卡高亮；乱输入→友好兜底。trace 里能回放该 run。
+  ✅ 2026-07-04 验证方式：`loop.ts` 扩展 `history`（续接多轮对话消息数组）与 `onToolCall`（活动指示回调，工具执行前上抛这批调用）两个可选项，2 个新用例；mock fixture 机制升级支持多轮剧本——`LlmFixture.steps` 数组，`mockTransport` 按"已经产生的 tool 结果数"选对应 step（不依赖轮次里无关的历史消息数），新增 `orchestrator-meeting-done`（先 complete_task 再文本结论）/`orchestrator-ppt-howto`（先 reveal_card 再三步教学）两个真实剧本 fixture，从 system 提示词里的状态快照抠真实 task id；`src/agents/tools/ui.ts` 落地 `reveal_card`/`notify`/`open_tool_site`（均 effect=ui），uiStore 加 `reveal`/`notification`（nonce 版本号保证同目标可重复触发）；`src/agents/tools/dispatch.ts` 的 `dispatch` 委派 decomposer/organizer/reporter，深度天然 ≤1（子 profile 白名单都没有 dispatch）；`registry.ts` 支持可选 `dispatchDeps` 才注册 dispatch；orchestrator 白名单补齐 reveal_card/notify/open_tool_site/dispatch；`runChat.ts` 封装聊天场景的 run（allowUiExternal 恒真、outcome==='text' 才算成功，其余走友好错误文案）；`useOrchestratorChat` 钩子管多轮历史续接+流式拼接+活动短句（`activityLabels.ts` 工具名→口语短句映射）+ 落 trace；`ChatDock`/`ChatSheet` 组件照原型视觉（呼吸圆点+消息气泡+打字指示器+附件），`App.tsx` 的 `activeTab` 改用 uiStore（本地 state 无法被 reveal_card 从组件树外部驱动，这是必须修的真实 bug）；`TaskCard` 接 uiStore.reveal 做展开+滚动进视野+临时高亮（1.8s 自动消退）；`NotifyBridge` 桥接 notify 工具到 Toast。Playwright 用真实解包扩展全流程验证：「试试示例」拆解出 4 卡后，点 dock 快捷 chip「会议纪要发完了」→ 对话里 complete_task 执行+文本确认+关闭对话后卡片确实划线；点「PPT 不知道从哪下手」→ reveal_card 立即把 tab 切到「活儿」+目标卡自动展开，随后三步教学文本到达；乱输入「哈哈哈随便打点字测试一下」→ 命中 DEFAULT_FIXTURE 友好兜底；`#/trace` 页确认 3 条 orchestrator run（2 轮/2 轮/1 轮，均 outcome=text）；全程控制台无报错，截图存 `docs/qa/T14-*.png`；`pnpm test`（48 文件 320 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。
 - [ ] **T15 长期记忆**：`remember/recall` 工具 + 用户画像块（800 字上限+淘汰）+ 工作日志（每日摘要，90 天滚动）+ 会话次日归档。
   DoD：单测：记忆写入→下次 run 的 system 记忆块可见；日志生成正确。
 - [ ] **T16 总览页**：spec §3.1 全区块动态化 + 空态 + 跳转。

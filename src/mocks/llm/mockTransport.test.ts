@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mockStreamChatCompletion } from './mockTransport';
-import { DECOMPOSER_SAMPLE_INPUT, DEFAULT_FIXTURE, FIXTURES } from './fixtures';
+import { DECOMPOSER_SAMPLE_INPUT, DEFAULT_FIXTURE } from './fixtures';
 import { DecomposerOutputSchema } from '@/src/agents/profiles/decomposer';
 
 describe('mockStreamChatCompletion', () => {
@@ -16,8 +16,26 @@ describe('mockStreamChatCompletion', () => {
     expect(result.usage).toEqual(DEFAULT_FIXTURE.usage);
   });
 
-  it('按最后一条用户消息匹配到对应 fixture', async () => {
-    const fixture = FIXTURES[0];
+  it('按最后一条用户消息匹配到对应 fixture（多轮剧本第 1 步是工具调用，不产文本）', async () => {
+    const result = await mockStreamChatCompletion(
+      {
+        baseUrl: 'mock://',
+        apiKey: '',
+        model: 'mock',
+        messages: [
+          { role: 'system', content: '# 当前任务板\n- t1 [todo] 整理今天的会议纪要，下班前发群里 fit=full' },
+          { role: 'assistant', content: '在' },
+          { role: 'user', content: '会议纪要发完了' },
+        ],
+      },
+      {},
+    );
+
+    expect(result.content).toBe('');
+    expect(result.toolCalls).toEqual([{ id: 'mock-tool-0-0', name: 'complete_task', arguments: JSON.stringify({ id: 't1' }) }]);
+  });
+
+  it('多轮剧本第 2 步（tool 结果已回来）给出文本结论，不再调工具', async () => {
     const deltas: string[] = [];
     const result = await mockStreamChatCompletion(
       {
@@ -25,15 +43,18 @@ describe('mockStreamChatCompletion', () => {
         apiKey: '',
         model: 'mock',
         messages: [
-          { role: 'assistant', content: '在' },
+          { role: 'system', content: '# 当前任务板\n- t1 [todo] 整理今天的会议纪要，下班前发群里 fit=full' },
           { role: 'user', content: '会议纪要发完了' },
+          { role: 'assistant', content: '', toolCalls: [{ id: 'mock-tool-0-0', name: 'complete_task', arguments: '{"id":"t1"}' }] },
+          { role: 'tool', toolCallId: 'mock-tool-0-0', content: '{"ok":true}' },
         ],
       },
       { onDelta: (d) => deltas.push(d) },
     );
 
-    expect(deltas).toEqual(fixture.chunks);
-    expect(result.content).toBe(fixture.chunks!.join(''));
+    expect(result.toolCalls).toBeUndefined();
+    expect(result.content).toContain('划掉了');
+    expect(deltas.join('')).toBe(result.content);
   });
 
   it('外部 signal 已 abort 时立即抛出 aborted 错误', async () => {

@@ -1,8 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { fakeBrowser } from 'wxt/testing';
+import { useUiStore } from '@/src/store';
 import App from './App';
 
 describe('App', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+    useUiStore.setState({ activeTab: 'overview', chatOpen: false, settingsOpen: false, reveal: null, notification: null });
+  });
+
   it('渲染总览/活儿/汇报三个 tab，默认选中总览', () => {
     render(<App />);
     expect(screen.getByRole('tab', { name: '总览' })).toHaveAttribute('aria-selected', 'true');
