@@ -106,7 +106,11 @@ export function DumpPanel() {
       const llm = createLlmDriver({ baseUrl: settings.baseUrl, apiKey: settings.apiKey });
       const activeTasks = Object.values(useTasksStore.getState().tasks).filter((t) => t.status !== 'done');
       const result = await runOrganize(activeTasks, { registry, llm, defaultModel: settings.model });
-      show(result.relations.length > 0 ? `找到 ${result.relations.length} 组可能有关联的活儿` : '没找到明显的关联');
+      if (result.error) {
+        show(result.error);
+      } else {
+        show(result.relations.length > 0 ? `找到 ${result.relations.length} 组可能有关联的活儿` : '没找到明显的关联');
+      }
     } catch (err) {
       show(`找关联失败：${err instanceof Error ? err.message : '未知错误'}`);
     } finally {

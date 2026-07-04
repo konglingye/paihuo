@@ -84,7 +84,7 @@
   height: 8px;
   border-radius: 50%;
   background: var(--color-accent);
-  animation: ping 2.8s ease-out infinite;
+  animation: orb-ping 2.8s ease-out infinite;
 }
 .orb-lg {
   width: 30px;
@@ -94,7 +94,8 @@
   width: 9px;
   height: 9px;
 }
-@keyframes ping {
+/* 命名加前缀避免撞上 Tailwind 内置 animate-ping 工具类同名的 @keyframes ping（撞名会被 Tailwind 的定义悄悄覆盖） */
+@keyframes orb-ping {
   0% {
     box-shadow: 0 0 0 0 rgba(61, 111, 252, 0.3);
   }
@@ -103,5 +104,17 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgba(61, 111, 252, 0);
+  }
+}
+
+/* 用户开了"减少动态效果"：所有 animation/transition（含内联 style）都收成近乎瞬时+只播一遍（T21）。注意：只能用单行注释写在这条规则前面，且规则本身不能塞进 @layer——两种情况下 Tailwind v4 的构建管线都会把这条规则整个丢掉，构建产物里能验证到，原因未明，暂记为已知坑。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -10,7 +10,9 @@ import type { LlmDriver, LlmDriverResult } from './harness/llmDriver';
 function scriptedDriver(script: Array<LlmDriverResult | Error>): LlmDriver {
   let i = 0;
   return async (_messages, _tools, _params, callbacks) => {
-    const step = script[i];
+    // 夹住下标：rate_limited/network 这类错误会被 callLlmWithRetry 退避重试一次，
+    // 脚本只写一条时第二次调用要拿到同一条，而不是越界的 undefined
+    const step = script[Math.min(i, script.length - 1)];
     i += 1;
     if (step instanceof Error) throw step;
     if (step.text) callbacks.onDelta?.(step.text);
@@ -80,7 +82,7 @@ describe('runOrganize', () => {
     expect(result.agentRun.outcome).toBe('contract_fallback');
   });
 
-  it('LLM 报错时不抛异常，relations 为空', async () => {
+  it('LLM 报错时不抛异常，relations 为空，且带一句友好错误文案（不能悄悄说成"没找到关联"）', async () => {
     const llm = scriptedDriver([new LlmError('network', '连不上')]);
     const result = await runOrganize(Object.values(useTasksStore.getState().tasks), {
       registry: createDefaultToolRegistry(),
@@ -88,5 +90,26 @@ describe('runOrganize', () => {
       defaultModel: 'mock',
     });
     expect(result.relations).toEqual([]);
+    expect(result.error).toBe('连不上 AI 平台，检查网络和接口地址');
+  });
+
+  it('429 报错时的友好文案', async () => {
+    const llm = scriptedDriver([new LlmError('rate_limited', '太快了', 429)]);
+    const result = await runOrganize(Object.values(useTasksStore.getState().tasks), {
+      registry: createDefaultToolRegistry(),
+      llm,
+      defaultModel: 'mock',
+    });
+    expect(result.error).toBe('请求太频繁了，等几秒再试');
+  });
+
+  it('真的没有关联（模型正常返回空建议）时不应该带 error', async () => {
+    const llm = scriptedDriver([{ text: JSON.stringify({ suggestions: [] }), toolCalls: [] }]);
+    const result = await runOrganize(Object.values(useTasksStore.getState().tasks), {
+      registry: createDefaultToolRegistry(),
+      llm,
+      defaultModel: 'mock',
+    });
+    expect(result.error).toBeUndefined();
   });
 });

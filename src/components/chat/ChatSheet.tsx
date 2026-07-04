@@ -51,6 +51,12 @@ export function ChatSheet({ open, onClose, messages, busy, activity, onSend }: C
     >
       <div className="flex h-full flex-col">
         <div ref={scrollRef} className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3.5">
+          {visibleMessages.length === 0 && !showTyping && (
+            <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-faint">
+              <Icon name="msg" className="h-6 w-6" />
+              <p className="text-[12.5px]">跟小派说点什么，聊聊进度或者接下来怎么派</p>
+            </div>
+          )}
           {visibleMessages.map((m) => (
             <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
               <div

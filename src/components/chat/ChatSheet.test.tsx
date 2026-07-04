@@ -53,6 +53,16 @@ describe('ChatSheet', () => {
     expect(screen.getByText('在线 · 手里记着 1 件活儿')).toBeInTheDocument();
   });
 
+  it('还没有消息时显示空态提示，引导开口说点什么', () => {
+    renderSheet();
+    expect(screen.getByText(/跟小派说点什么/)).toBeInTheDocument();
+  });
+
+  it('有消息之后不再显示空态提示', () => {
+    renderSheet({ messages: MESSAGES });
+    expect(screen.queryByText(/跟小派说点什么/)).not.toBeInTheDocument();
+  });
+
   it('渲染用户/助手消息气泡', () => {
     renderSheet({ messages: MESSAGES });
     expect(screen.getByText('会议纪要发完了')).toBeInTheDocument();

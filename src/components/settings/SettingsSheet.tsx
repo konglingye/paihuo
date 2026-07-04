@@ -14,7 +14,7 @@ function describeError(error: LlmError): string {
     case 'unauthorized':
       return 'key 不对——回步骤 2 检查有没有复制完整';
     case 'rate_limited':
-      return '请求太频繁了，稍等几秒再试';
+      return '请求太频繁了，等几秒再试';
     case 'timeout':
       return '连接超时，检查网络或稍后重试';
     case 'network':

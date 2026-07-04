@@ -16,6 +16,25 @@ export interface RunOrganizeDeps {
 export interface RunOrganizeResult {
   agentRun: AgentRun;
   relations: Relation[];
+  /** 只有真的报错（网络/超时/401/429…）才有；契约降级/正常返回空建议都不算错误，不设这个字段 */
+  error?: string;
+}
+
+/** LLM 真报错时的友好文案——不能让"没找到关联"和"key 失效/限流"用同一句话糊弄用户 */
+function describeOrganizeError(agentRun: AgentRun): string | undefined {
+  if (!agentRun.error) return undefined;
+  switch (agentRun.error.kind) {
+    case 'unauthorized':
+      return 'AI 平台说 key 不对——去设置里检查一下';
+    case 'rate_limited':
+      return '请求太频繁了，等几秒再试';
+    case 'timeout':
+      return '连接超时，检查网络后重试';
+    case 'network':
+      return '连不上 AI 平台，检查网络和接口地址';
+    default:
+      return `出了点问题：${agentRun.error.message}`;
+  }
 }
 
 /**
@@ -35,7 +54,7 @@ export async function runOrganize(tasks: Task[], deps: RunOrganizeDeps): Promise
   });
 
   if (agentRun.finalOutput === undefined) {
-    return { agentRun, relations: [] };
+    return { agentRun, relations: [], error: describeOrganizeError(agentRun) };
   }
 
   const output = agentRun.finalOutput as OrganizerOutput;
