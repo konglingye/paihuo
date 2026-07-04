@@ -45,12 +45,12 @@
 
 ## 📸 界面一览
 
-**[👉 打开交互式原型](docs/prototype.html)** 在浏览器中体验完整设计
+**[👉 打开交互式原型](https://htmlpreview.github.io/?https://github.com/konglingye/paihuo/blob/main/docs/prototype.html)** 在浏览器中体验完整设计
 
 ### 核心三个界面
 
 | 总览 | 活儿 | 汇报 |
-|-----|-----|-----|
+|-----|-----|------|
 | 进度 + 截止提醒 + 成果统计 | 倒活输入 + 任务卡 + 关联建议 | 选模板 + AI 秒写日周月报 |
 
 ---
@@ -125,7 +125,7 @@ WXT • React 18 • TypeScript • Tailwind • Zustand • Zod • Vitest + Pl
 | [**产品规格**](docs/00-product-spec.md) | 完整功能定义 + 数据模型 |
 | [**开发计划**](docs/01-dev-plan.md) | 任务清单与进度 |
 | [**架构设计**](docs/02-agent-architecture.md) | Agent Harness 深度解析 |
-| [**交互原型**](docs/prototype.html) | 在浏览器打开看完整设计 |
+| [**交互原型**](https://htmlpreview.github.io/?https://github.com/konglingye/paihuo/blob/main/docs/prototype.html) | 在浏览器打开看完整设计 |
 
 ---
 
