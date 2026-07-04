@@ -97,8 +97,9 @@
 
 ### M6 质量与收口
 
-- [ ] **T19 评测套件**（arch §7）：`pnpm eval`——拆解 6 fixtures 断言（fit 保守/空槽/目录内 toolId/due）、对话脚本断言工具序列、压缩召回断言。
+- [x] **T19 评测套件**（arch §7）：`pnpm eval`——拆解 6 fixtures 断言（fit 保守/空槽/目录内 toolId/due）、对话脚本断言工具序列、压缩召回断言。
   DoD：mock 通道全绿；真模型通道留待 T24。
+  ✅ 2026-07-04 验证方式：新增独立的 `vitest.eval.config.ts`（只跑 `evals/**/*.eval.test.ts`）+ 主 `vitest.config.ts` 排除 `evals/**`，`pnpm eval` 和 `pnpm test` 两条通道互不重复（分别 31 和 396 个用例，加起来才是全部）；`evals/fixtures/decomposerGoldens.ts` 手工标注 6 个金标准"领导原话"场景（发布会四事项/带附件/带干扰闲聊/超长会议转写/fit 保守性场景——业务判断类不能标 full、纯翻译类可以标 full/多个明确截止日期），`evals/decomposer.eval.test.ts` 对每个场景走完整 `runDecompose` 链路，断言任务数在预期区间、非 self 任务提示词都带【】空槽、toolId 都在封闭目录内、due 有非空文本、fit 跨全部场景既有 full 也有 assist 且业务判断类场景强制 assist，26 个用例；`evals/chat.eval.test.ts` 直接复用 T14 已经建好的真实 mock fixture（不新造数据），断言"会议纪要发完了"确实调了 `complete_task` 且参数是真实 task id、"PPT 不知道从哪下手"确实调了 `reveal_card` 且终局文本带序号分步、胡乱输入零工具调用走友好兜底，3 个用例；`evals/compression.eval.test.ts` 不只测 `compressHistory` 机制本身（那是 T07 的事），而是端到端跑一遍"长会话压缩→压缩结果当 history 喂给下一轮 runChat→追问→断言回答带着未决事项"，另加一组对照（摘要没提到未决事项时确实召回不到，证明断言不是摆设），2 个用例。真模型通道按 arch §7 留给 T24 停点后再跑同一套 fixture 人工评分。`pnpm eval`（3 文件 31 用例）/`pnpm test`（57 文件 396 用例）/`pnpm compile`/`pnpm build`（mock 与非 mock）全绿。
 - [ ] **T20 右键收集与快捷键**：contextMenus 选中文本→倒活框；`Cmd/Ctrl+Shift+Y`。
   DoD：手动验证记录；权限未超集。
 - [ ] **T21 打磨**：空态/错误态/429 引导全检、reduced-motion、360-420px 自适应、文案对照原型校对；`docs/qa/checklist.md` 完稿打勾。
