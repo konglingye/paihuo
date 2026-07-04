@@ -6,6 +6,7 @@ import { buildStateBlock } from '../prompts/blocks/state';
 import { buildContractBlock } from '../prompts/blocks/contract';
 import { buildStyleBlock } from '../prompts/blocks/style';
 import { buildMemoryBlock } from '../prompts/blocks/memory';
+import { useMemoryStore } from '@/src/store/memoryStore';
 import type { Task } from '@/src/store/schema';
 
 /**
@@ -30,7 +31,7 @@ export function buildReporterProfile(existingTasks: Task[]): AgentProfile {
         '给领导看的语气：量化、结论先行、不堆形容词',
         '没有模板时用默认结构；上传了模板就严格套模板的层级和口径',
       ]),
-      memory: buildMemoryBlock(),
+      memory: buildMemoryBlock(useMemoryStore.getState().profileText()),
     }),
   };
 }

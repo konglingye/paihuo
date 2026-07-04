@@ -7,6 +7,7 @@ import { buildStateBlock } from '../prompts/blocks/state';
 import { buildContractBlock } from '../prompts/blocks/contract';
 import { buildStyleBlock } from '../prompts/blocks/style';
 import { buildMemoryBlock } from '../prompts/blocks/memory';
+import { useMemoryStore } from '@/src/store/memoryStore';
 import type { Task } from '@/src/store/schema';
 
 /** 整理官输出契约（spec §6.2：产合并推进建议，事件触发，自动 run 只产建议不动数据） */
@@ -43,7 +44,7 @@ export function buildOrganizerProfile(existingTasks: Task[]): AgentProfile {
       state: buildStateBlock(existingTasks),
       contract: buildContractBlock(CONTRACT_DESCRIPTION),
       style: buildStyleBlock(['建议一句话、口语化，不说套话']),
-      memory: buildMemoryBlock(),
+      memory: buildMemoryBlock(useMemoryStore.getState().profileText()),
     }),
   };
 }

@@ -8,6 +8,8 @@ import { useGroupsStore } from './groupsStore';
 import { useReportsStore } from './reportsStore';
 import { useRelationsStore } from './relationsStore';
 import { useTraceStore } from './traceStore';
+import { useMemoryStore } from './memoryStore';
+import { useWorklogStore } from './worklogStore';
 
 describe('clearAllData（设置页"清空所有数据"）', () => {
   beforeEach(() => {
@@ -27,6 +29,8 @@ describe('clearAllData（设置页"清空所有数据"）', () => {
       startedAt: 0,
       finishedAt: 1,
     });
+    useMemoryStore.getState().remember('他姓李');
+    useWorklogStore.getState().archiveIfNewDay('2026-07-04', []);
   });
 
   it('清空后每个 store 都回到初始空状态', () => {
@@ -39,5 +43,8 @@ describe('clearAllData（设置页"清空所有数据"）', () => {
     expect(useReportsStore.getState().reports).toEqual([]);
     expect(useRelationsStore.getState().relations).toEqual([]);
     expect(useTraceStore.getState().runs).toEqual([]);
+    expect(useMemoryStore.getState().facts).toEqual([]);
+    expect(useWorklogStore.getState().entries).toEqual([]);
+    expect(useWorklogStore.getState().lastActiveDate).toBeNull();
   });
 });

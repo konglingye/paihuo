@@ -9,4 +9,8 @@ export { useRelationsStore } from './relationsStore';
 export { useUiStore } from './uiStore';
 export type { ActiveTab, TaskFilter } from './uiStore';
 export { useTraceStore } from './traceStore';
+export { useMemoryStore } from './memoryStore';
+export type { MemoryFact } from './memoryStore';
+export { useWorklogStore, buildDailySummary } from './worklogStore';
+export type { WorklogEntry } from './worklogStore';
 export { clearAllData } from './clearAllData';

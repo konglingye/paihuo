@@ -6,12 +6,10 @@ import { buildStateBlock } from '../prompts/blocks/state';
 import { buildContractBlock } from '../prompts/blocks/contract';
 import { buildStyleBlock } from '../prompts/blocks/style';
 import { buildMemoryBlock } from '../prompts/blocks/memory';
+import { useMemoryStore } from '@/src/store/memoryStore';
 import type { Task } from '@/src/store/schema';
 
-/**
- * 小派（主对话）：终局是对话文本，没有 JSON 契约。
- * toolNames 是已落地的任务库+内容工具+ui工具+调度；remember/recall 留给 T15。
- */
+/** 小派（主对话）：终局是对话文本，没有 JSON 契约。toolNames 是已落地的任务库+内容工具+ui工具+调度+记忆。 */
 export function buildOrchestratorProfile(existingTasks: Task[]): AgentProfile {
   return {
     name: 'orchestrator',
@@ -28,6 +26,8 @@ export function buildOrchestratorProfile(existingTasks: Task[]): AgentProfile {
       'notify',
       'open_tool_site',
       'dispatch',
+      'remember',
+      'recall',
     ],
     maxTurns: 6,
     params: { temperature: 0.7 },
@@ -43,7 +43,7 @@ export function buildOrchestratorProfile(existingTasks: Task[]): AgentProfile {
       state: buildStateBlock(existingTasks),
       contract: buildContractBlock(undefined),
       style: buildStyleBlock(['说人话、短句、先给结论', '适度幽默，绝不说教']),
-      memory: buildMemoryBlock(),
+      memory: buildMemoryBlock(useMemoryStore.getState().profileText()),
     }),
   };
 }

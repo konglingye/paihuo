@@ -17,6 +17,8 @@ const BASE_TOOL_NAMES = [
   'reveal_card',
   'notify',
   'open_tool_site',
+  'remember',
+  'recall',
 ];
 
 describe('createDefaultToolRegistry', () => {

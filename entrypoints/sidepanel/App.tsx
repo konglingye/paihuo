@@ -1,6 +1,7 @@
+import { useEffect } from 'react';
 import { IconSprite } from '@/src/components/icons/IconSprite';
 import { Icon } from '@/src/components/icons/Icon';
-import { useUiStore } from '@/src/store';
+import { useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
 import { SettingsSheet } from '@/src/components/settings/SettingsSheet';
 import { DumpPanel } from '@/src/components/dump/DumpPanel';
 import { ToastProvider } from '@/src/components/ui';
@@ -28,6 +29,13 @@ function App() {
   const openChat = useUiStore((s) => s.openChat);
   const closeChat = useUiStore((s) => s.closeChat);
   const chat = useOrchestratorChat();
+
+  // 会话次日归档（arch §3.3）：每次面板打开时检查——如果换了新的一天，把上一个活跃日归档进工作日志
+  useEffect(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const tasks = Object.values(useTasksStore.getState().tasks);
+    useWorklogStore.getState().archiveIfNewDay(todayKey, tasks);
+  }, []);
 
   return (
     <ToastProvider>

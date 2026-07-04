@@ -7,6 +7,7 @@ import { buildStateBlock } from '../prompts/blocks/state';
 import { buildContractBlock } from '../prompts/blocks/contract';
 import { buildStyleBlock } from '../prompts/blocks/style';
 import { buildMemoryBlock } from '../prompts/blocks/memory';
+import { useMemoryStore } from '@/src/store/memoryStore';
 import { GroupKindSchema, TaskDraftSchema } from '@/src/store/schema';
 import type { Task } from '@/src/store/schema';
 
@@ -85,7 +86,7 @@ export function buildDecomposerProfile(existingTasks: Task[]): AgentProfile {
         '每条 prompt 里用户必须补充的信息一律写成【…】空槽',
         'saveMin 保守估计；due 提不出来就留空，不要瞎猜',
       ]),
-      memory: buildMemoryBlock(),
+      memory: buildMemoryBlock(useMemoryStore.getState().profileText()),
     }),
   };
 }

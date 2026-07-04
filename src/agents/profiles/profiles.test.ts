@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { fakeBrowser } from 'wxt/testing';
 import { buildDecomposerProfile, DecomposerOutputSchema } from './decomposer';
 import { buildOrganizerProfile, OrganizerOutputSchema } from './organizer';
 import { buildReporterProfile } from './reporter';
 import { buildOrchestratorProfile } from './orchestrator';
+import { useMemoryStore } from '@/src/store/memoryStore';
 import type { Task } from '@/src/store/schema';
 
 const sampleTasks: Task[] = [
@@ -104,6 +106,35 @@ describe('orchestrator profile', () => {
       'notify',
       'open_tool_site',
       'dispatch',
+      'remember',
+      'recall',
     ]);
+  });
+});
+
+describe('记忆块注入（T15 DoD：记忆写入→下次 run 的 system 记忆块可见）', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+    useMemoryStore.setState({ facts: [] });
+  });
+
+  it('remember 一条事实后，四个 profile 组装出的 systemPrompt 都能看到它', () => {
+    useMemoryStore.getState().remember('他说过纪要要发飞书不发微信');
+
+    const prompts = [
+      buildDecomposerProfile(sampleTasks).systemPrompt,
+      buildOrganizerProfile(sampleTasks).systemPrompt,
+      buildReporterProfile(sampleTasks).systemPrompt,
+      buildOrchestratorProfile(sampleTasks).systemPrompt,
+    ];
+
+    prompts.forEach((prompt) => {
+      expect(prompt).toContain('# 记忆');
+      expect(prompt).toContain('他说过纪要要发飞书不发微信');
+    });
+  });
+
+  it('没有任何记忆时，记忆块不出现在 systemPrompt 里（assemble 自动跳过空块）', () => {
+    expect(buildOrchestratorProfile(sampleTasks).systemPrompt).not.toContain('# 记忆');
   });
 });
