@@ -1,9 +1,48 @@
-# 派活儿 Paihuo · 开发启动包
+# 派活儿 Paihuo
 
 > **一句话**：浏览器侧边栏插件，帮不太会用 AI 的打工人——把任务倒进来，自动拆成清单，标注 AI 能帮多少、该用哪个工具、第一句话说什么；聊进度自动划卡；一键写日报/周报/月报。
 > **形态红线**：Chrome MV3 sidePanel · 无后端无账号 · 数据全本机 · **BYOK**（用户自己的 API key，产品负责把「注册→创建→复制→粘贴」引导到傻瓜级，绝不内置开发者的 key）。
 
+当前版本 **v0.1.0**（mock 全链路验证通过；真实模型效果尚待 T24 用真 key 冒烟评测，还没上架应用商店）。
+
+## 安装（Chrome / Edge 通用）
+
+派活儿目前还没上架应用商店，需要用「开发者模式」手动装一次，装完之后跟普通插件一样正常用，不需要每次都这样。
+
+1. 拿到扩展包：自己跑一遍 `pnpm zip`，在 `.output/paihuo-0.1.0-chrome.zip` 拿到包；解压到任意一个你不会手滑删掉的文件夹。
+2. 浏览器地址栏打开 `chrome://extensions`（Edge 是 `edge://extensions`），右上角把「开发者模式」打开。
+3. 点「加载已解压的扩展程序」，选中第 1 步解压出来的文件夹。
+4. 加载成功后，扩展列表里会出现「派活儿」：
+
+   ![加载成功](docs/install/01-chrome-extensions-page.png)
+
+5. 点工具栏里的派活儿图标（或按快捷键 `Ctrl+Shift+Y`，Mac 是 `Command+Shift+Y`）打开侧边栏，第一次打开长这样：
+
+   ![总览页](docs/install/02-sidepanel-overview.png)
+
+## 接上 AI，只需 3 步
+
+侧边栏右上角点齿轮，跟着向导走一遍——全程不用离开这个面板，key 只存在你自己电脑的浏览器里，不经过任何第三方服务器：
+
+1. **选一家 AI 平台**——没有账号的话点「去注册·创建 API key」，DeepSeek 手机号就能注册，新用户送免费额度。
+
+   ![选平台](docs/install/03-onboarding-step1-platform.png)
+
+2. **把 key 粘贴到这里**——接口地址已经按平台自动填好，不用改。
+
+   ![粘贴 key](docs/install/04-onboarding-step2-key.png)
+
+3. **连接，挑个「会思考」的模型**——点「连接并拉取模型列表」，会自动帮你选中推荐的推理模型，再点「测试连接」确认打通。
+
+   ![已连通](docs/install/05-onboarding-step3-connected.png)
+
+连通之后就能用了：把领导甩给你的活儿倒进「活儿」页 → AI 拆成带工具和提示词的任务卡 → 复制提示词跳转对应工具 → 跟小派聊几句盯进度 → 收工时去「汇报」页一键出日报。
+
+---
+
 ## 开发目标（Definition of Victory）
+
+> 以下内容面向要修改代码 / 继续开发的人；只是想用这个插件的话，看到上面就够了。
 
 一个可在 Chrome/Edge 开发者模式安装的 **v0.1.0 zip**：
 
@@ -45,3 +84,6 @@
 | `docs/02-agent-architecture.md` | **智能体机制 SSOT**：harness 循环、工具编排、提示词装配、上下文管理、事件、trace、evals |
 | `docs/01-dev-plan.md` | 任务清单 T01-T25：每个带 DoD 与验证方式 |
 | `prototype/paihuo-prototype.html` | **UI/UX 像素级权威**（自包含，浏览器直接打开对照；豆包蓝设计令牌在文件头 `:root`） |
+| `docs/install/*.png` | 本文顶部「安装」「接上 AI」两节用的截图 |
+| `docs/qa/*.png` | 每个任务的验证截图（本地留存，不进 git，体积会失控） |
+| `e2e/`、`playwright.config.ts` | `pnpm e2e`：mock 全链路冒烟（配置→倒活→拆解→筛选→对话→汇报→重启数据仍在→trace） |
