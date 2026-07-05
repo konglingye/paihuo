@@ -92,4 +92,29 @@ describe('ChatSheet', () => {
     renderSheet({ busy: true });
     expect(screen.getByLabelText('对话输入')).toBeDisabled();
   });
+
+  describe('小派回复渲染真富文本，不是原始 markdown 符号', () => {
+    it('bot 消息里的 ** 加粗 ** 渲成真的 <strong>，不是字面 **', () => {
+      renderSheet({
+        messages: [{ id: 'm1', role: 'bot', text: '**会议纪要任务已划掉！** 群里已经发出去了吧？' }],
+      });
+      const strong = screen.getByText('会议纪要任务已划掉！', { selector: 'strong' });
+      expect(strong).toBeInTheDocument();
+      expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
+    });
+
+    it('bot 消息里的 --- 分隔线渲成真的 <hr>，不是字面 ---', () => {
+      const { container } = renderSheet({
+        messages: [{ id: 'm1', role: 'bot', text: '先看看这个\n\n---\n\n再看看那个' }],
+      });
+      expect(container.querySelector('hr')).toBeInTheDocument();
+      expect(screen.queryByText(/^---$/)).not.toBeInTheDocument();
+    });
+
+    it('user 消息保持原样展示，不做 markdown 解析（用户打字不该被当成 markdown 语法）', () => {
+      renderSheet({ messages: [{ id: 'm1', role: 'user', text: '这个 **重要** 吗？' }] });
+      expect(screen.getByText('这个 **重要** 吗？')).toBeInTheDocument();
+      expect(screen.queryByText('重要', { selector: 'strong' })).not.toBeInTheDocument();
+    });
+  });
 });

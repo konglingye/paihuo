@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Sheet } from '@/src/components/ui';
 import { Icon } from '@/src/components/icons/Icon';
 import { AttachButton } from '@/src/components/attachments/AttachButton';
+import { MarkdownView } from '@/src/components/report/MarkdownView';
 import { useTasksStore } from '@/src/store';
 import { extensionOf } from '@/src/content/attachmentWhitelist';
 import type { ChatAttachment, ChatMessageVM } from './useOrchestratorChat';
@@ -74,7 +75,7 @@ export function ChatSheet({ open, onClose, messages, busy, activity, onSend }: C
                     {m.attachmentName}
                   </div>
                 )}
-                {m.text}
+                {m.role === 'user' ? m.text : <MarkdownView text={m.text} />}
               </div>
             </div>
           ))}
