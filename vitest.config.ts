@@ -10,6 +10,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    exclude: [...configDefaults.exclude, 'evals/**', 'e2e/**'],
+    // .claude/、.agents/ 是本地工具配置目录（已进 .gitignore），不是项目代码，防止里面偶尔
+    // 冒出来的脚本自带的 *.test.* 文件被当成本项目的测试跑
+    exclude: [...configDefaults.exclude, 'evals/**', 'e2e/**', '.claude/**', '.agents/**'],
   },
 });
