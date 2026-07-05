@@ -26,14 +26,15 @@
 问候（按时段）+ 完成进度环 `done/total` + 统计行（今天 N 件 · 完成 M · AI 预计帮你省 ≈X）；「按类型看」计数块（点击→活儿页对应筛选）；「盯紧截止时间」到期任务行（点击→跳卡并高亮）；「今天的成果」（完成数+省时，引导写日报）；CTA「把今天写成日报」；未倒活时显示引导条。
 
 ### 3.2 活儿 tab
-- **倒活输入区**：textarea（placeholder 见原型）+ 附件按钮 + 语音按钮（v0.1 占位，见 §9）+「拆解」主按钮；支持粘贴/拖拽文件；拆解后收起为「+ 再倒点活儿进来」细条。
+- **倒活输入区**：textarea（placeholder 见原型）+ 附件按钮 + 语音按钮（v0.1 占位，见 §9）+「拆解」主按钮；支持粘贴/拖拽文件；拆解后先弹**确认弹窗**（见下），确认后才收起为「+ 再倒点活儿进来」细条。
+- **拆解确认弹窗**（用户反馈后加，偏离早期"拆解直接进列表"设计）：拆解官产出待确认结果后不直接落库，逐条只读展示标题/fit/类型 + 截止时间输入；原话里带时间线索（今天/具体日期/本周等）的自动预填并标注「AI 识别到」，没识别出来的必须手填或勾选「不用填」，确认按钮才会点亮；点「确认创建」才真正写进任务列表，点「取消」则整批丢弃不落库。
 - **附件白名单**：`pdf txt md doc docx csv xls xlsx png jpg jpeg webp`，其余拒收并 toast（文案见原型）。文本抽取：txt/md 直读；pdf→pdfjs-dist；doc/docx→mammoth；csv/xlsx→SheetJS 转文本。图片：所选模型支持视觉则随消息发送，否则 toast 提示「换多模态模型或把内容打成字」。
 - **类型筛选行**：全部/写作/演示/数据/沟通/杂事 + 计数，单选。
-- **任务卡列表**：按分组渲染（紧急组红/项目组蓝带关联数/日常灰）；卡片=复选框+标题+徽标行（截止 pill、三档 fit pill、类型 tag、工具 chip）；展开=说明+「怎么让 AI 干」+提示词块（**空槽用高亮 mark，用户只填空**）+主按钮「复制提示词 · 打开 {工具}」（复制到剪贴板 + `chrome.tabs.create` 打开工具站）+「标记完成」。fit=self 的任务给「小抄」（可直接发的消息草稿）而非工具跳转。
+- **任务卡列表**：按分组渲染（紧急组红/项目组蓝带关联数/日常灰）；卡片=复选框+标题+徽标行（截止 pill、三档 fit pill、类型 tag、工具 chip）；展开=说明+「怎么让 AI 干」+提示词块（**空槽用高亮 mark，用户只填空**）+主按钮「复制提示词 · 打开 {工具}」（复制到剪贴板 + `chrome.tabs.create` 打开工具站）+「标记完成」+「删除这件活儿」（二次确认，不可撤销）。fit=self 的任务给「小抄」（可直接发的消息草稿）而非工具跳转。
 - **关联横幅**：整理器发现可合并推进的任务时出现（见 §6.2）。
 
 ### 3.3 汇报 tab
-日报/周报/月报分段 → 元信息条（基于 N 完成 M 进行中）→「上传公司模板（可选）」（白名单同上，解析为文本注入 prompt；已传显示绿色 chip 可移除）→「让 AI 写{日报}」→ 流式输出框 → 「复制全文」「下载 .md」。
+日报/周报/月报分段 → 元信息条（基于 N 完成 M 进行中）→「上传公司模板（可选）」（白名单同上，解析为文本注入 prompt；已传显示绿色 chip 可移除）→「让 AI 写{日报}」→ 流式输出框（**渲染成真富文本**——标题/加粗/列表/表格转成对应元素，不原样吐出 `#`/`**`/`|` 符号）→ 「复制全文」「下载 .md」。
 
 ### 3.4 设置抽屉「接上 AI，只需 3 步」
 - **步骤 1 选平台**：预设 chips + 平台说明 tip + 「去注册 · 创建 API key」按钮（`chrome.tabs.create` 打开注册页）。
@@ -84,7 +85,7 @@ interface ReportRecord { id: string; kind: 'daily'|'weekly'|'monthly'; content: 
 
 ## 5. 工具目录（closed catalog，杜绝幻觉链接）
 
-`src/assets/tools.json`，路由器**只能**从中选择。Schema：`{id, name, url, registerNote, categories: TaskType[], strengths, priceNote}`。初始条目（URL 执行时逐一核验，失效就替换或删）：豆包 doubao.com、DeepSeek chat.deepseek.com、Kimi kimi.com、通义千问 tongyi.com、文心一言 yiyan.baidu.com、秘塔搜索 metaso.cn、通义听悟 tingwu.aliyun.com、飞书妙记 feishu.cn、WPS AI ai.wps.cn、讯飞星火 xinghuo.xfyun.cn、即梦 jimeng.jianying.com、可灵 klingai.com、剪映 jianying.com、Gamma gamma.app、DeepL deepl.com、沉浸式翻译 immersivetranslate.com。
+`src/assets/tools.json`，路由器**只能**从中选择。Schema：`{id, name, url, registerNote, categories: TaskType[], strengths, priceNote}`。**只收录国产工具**（用户明确要求，不上外国产品）；初始条目（URL 执行时逐一核验，失效就替换或删）：豆包 doubao.com、DeepSeek chat.deepseek.com、Kimi kimi.com（含 PPT 大纲生成）、通义千问 tongyi.com、文心一言 yiyan.baidu.com、秘塔搜索 metaso.cn、通义听悟 tingwu.aliyun.com、飞书妙记 feishu.cn、WPS AI ai.wps.cn、讯飞星火 xinghuo.xfyun.cn、即梦 jimeng.jianying.com、可灵 klingai.com、剪映 jianying.com、有道翻译 fanyi.youdao.com、沉浸式翻译 immersivetranslate.com。
 
 ## 6. 智能体层（机制 SSOT = `docs/02-agent-architecture.md`）
 
@@ -92,7 +93,7 @@ interface ReportRecord { id: string; kind: 'daily'|'weekly'|'monthly'; content: 
 
 ### 6.1 拆解官 decomposer
 输入：原话 + 附件（经 `read_attachment` 分块）+ 现有未完成任务快照。输出契约 JSON：`{tasks: Task草稿[], groups: Group[], relates: {aIds: string[], reason, suggestion}[]}`。
-行为要点：把口语化指派拆成**可交付**任务（标题=动词开头的交付物）；fit 三档宁保守不吹牛（AI 只能起草的算 assist）；type 五选一；toolId 必须来自 `search_tool_catalog` 结果，选不出留空并降为 self；每条配外部提示词（`draft_user_prompt`）——**用户只填空**，必补信息写成【…】高亮空槽，含角色/任务/格式/语气四段；fit=self 给可直接发出的小抄；saveMin 保守估；due 提不出留空。
+行为要点：把口语化指派拆成**可交付**任务（标题=动词开头的交付物）；fit 三档宁保守不吹牛（AI 只能起草的算 assist）；type 五选一；toolId 必须来自 `search_tool_catalog` 结果，选不出留空并降为 self；每条配外部提示词（`draft_user_prompt`）——**用户只填空**，必补信息写成【…】高亮空槽，含角色/任务/格式/语气四段；fit=self 给可直接发出的小抄；saveMin 保守估；due 提不出留空，交给拆解确认弹窗（见 §3.2）兜底——用户手填或明确勾"不用填"才放行落库。
 ### 6.2 整理官 organizer
 事件触发（dump.created 随拆解链、task.completed 轻量检查）。职责：发现「同一交付物/同一活动/同一数据源」的任务，产出合并推进建议（一句话，口语）；自动 run 只产建议，不动数据、不碰 ui 工具。
 ### 6.3 小派 orchestrator（主对话）
