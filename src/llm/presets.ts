@@ -16,7 +16,10 @@ export const MODEL_PRESETS: ModelPreset[] = [
     baseUrl: 'https://api.deepseek.com',
     registerUrl: 'https://platform.deepseek.com',
     tip: 'DeepSeek：手机号就能注册，新用户送免费额度；之后一次拆解也就几分钱。',
-    reasoningWhitelist: ['deepseek-reasoner'],
+    // deepseek-chat/deepseek-reasoner 两个旧模型名将于 2026-07-24 23:59（北京时间）下线，
+    // 合并进 deepseek-v4-flash（默认思考模式，可切非思考）+ deepseek-v4-pro；这里先加上新
+    // 名字保证过渡期和下线后都能正确识别，旧名字暂时保留，下线后再删
+    reasoningWhitelist: ['deepseek-reasoner', 'deepseek-v4-flash', 'deepseek-v4-pro'],
   },
   {
     id: 'kimi',
