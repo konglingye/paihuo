@@ -3,7 +3,6 @@ import { excerptFragment } from './harness/context';
 import type { ToolRegistry } from './harness/tools';
 import type { LlmDriver } from './harness/llmDriver';
 import { buildDecomposerProfile, type DecomposerOutput } from './profiles/decomposer';
-import { materializeDecomposerOutput, type MaterializeResult } from './materializeDecomposerOutput';
 import type { AgentRun } from './harness/trace';
 import type { Fragment, Task } from '@/src/store/schema';
 
@@ -18,8 +17,13 @@ export interface RunDecomposeCallbacks {
   onDelta?: (text: string) => void;
 }
 
+/**
+ * 不在这里落库——用户要求拆解完先弹确认弹窗过一遍再入库（尤其是截止时间要么确认要么手动补），
+ * 所以这里只跑 agent、把契约输出原样交回调用方，落库交给用户确认之后调用
+ * materializeDecomposerOutput 那一步（见 useDecomposeRun 的 confirm 方法）。
+ */
 export type RunDecomposeResult =
-  | { ok: true; agentRun: AgentRun; materialized: MaterializeResult }
+  | { ok: true; agentRun: AgentRun; output: DecomposerOutput; fragmentId: string }
   | { ok: false; agentRun: AgentRun; error: string };
 
 function describeRunError(agentRun: AgentRun): string {
@@ -42,7 +46,7 @@ function describeRunError(agentRun: AgentRun): string {
   return '拆解没有产出结果——多轮尝试都没能给出答案，换个说法或分开倒试试';
 }
 
-/** 拆解官链路的核心逻辑：跑一次 decomposer run，成功/降级都落库，失败返回友好错误文案 */
+/** 拆解官链路的核心逻辑：跑一次 decomposer run，成功/降级都原样交出契约输出，不落库；失败返回友好错误文案 */
 export async function runDecompose(
   fragment: Fragment,
   deps: RunDecomposeDeps,
@@ -59,8 +63,7 @@ export async function runDecompose(
   );
 
   if (agentRun.finalOutput !== undefined) {
-    const materialized = materializeDecomposerOutput(agentRun.finalOutput as DecomposerOutput, fragment.id);
-    return { ok: true, agentRun, materialized };
+    return { ok: true, agentRun, output: agentRun.finalOutput as DecomposerOutput, fragmentId: fragment.id };
   }
 
   return { ok: false, agentRun, error: describeRunError(agentRun) };

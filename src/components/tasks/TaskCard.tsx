@@ -4,14 +4,8 @@ import { Icon } from '@/src/components/icons/Icon';
 import { Pill, Button, useToast } from '@/src/components/ui';
 import { useTasksStore, useUiStore } from '@/src/store';
 import { cn } from '@/src/lib/cn';
-import { TYPE_LABELS } from './taskTypeMeta';
+import { FIT_LABELS, TYPE_LABELS } from './taskTypeMeta';
 import type { Task } from '@/src/store/schema';
-
-const FIT_LABELS: Record<Task['fit'], string> = {
-  full: 'AI 可代劳',
-  assist: 'AI 打下手',
-  self: '自己来 · 有小抄',
-};
 
 const COPIED_STATE_MS = 2600;
 const BURST_PARTICLES = 6;

@@ -82,7 +82,7 @@ describe.skipIf(!HAS_KEY)(`真模型冒烟（model=${MODEL}，没设 PAIHUO_REAL
         );
         console.log('人工标注 mockOutput:', JSON.stringify(golden.mockOutput.tasks.map((t) => ({ title: t.title, type: t.type, fit: t.fit, toolId: t.toolId })), null, 2));
         if (result.ok) {
-          console.log('真模型产出 tasks:', JSON.stringify(result.materialized.tasks.map((t) => ({ title: t.title, type: t.type, fit: t.fit, toolId: t.toolId, prompt: t.prompt?.slice(0, 60) })), null, 2));
+          console.log('真模型产出 tasks:', JSON.stringify(result.output.tasks.map((t) => ({ title: t.title, type: t.type, fit: t.fit, toolId: t.toolId, prompt: t.prompt?.slice(0, 60) })), null, 2));
         } else {
           console.log('真模型失败:', result.error);
         }

@@ -27,10 +27,26 @@ test('mock 全链路：配置→倒活→拆解→筛选→对话→汇报→重
     await page.locator('div[aria-hidden="true"].z-40').nth(1).click({ force: true, position: { x: 10, y: 10 } });
   });
 
-  await test.step('倒活+拆解：示例文案产出发布会四件套任务卡', async () => {
+  await test.step('倒活+拆解：示例文案先弹确认弹窗，AI 识别的截止时间已预填，补全后才产出四件套任务卡', async () => {
     await page.getByRole('tab', { name: '活儿' }).click();
     await page.getByRole('button', { name: '试试示例' }).click();
     await page.getByRole('button', { name: '拆解' }).click();
+
+    const confirmDialog = page.locator('[role="dialog"][aria-label^="确认这"]');
+    await expect(confirmDialog).toBeVisible({ timeout: 10_000 });
+    await expect(confirmDialog.getByText(/AI 识别到「今天 18:00」/)).toBeVisible();
+
+    // 除了「整理今天的会议纪要」，另外三件 AI 没识别出截止时间，确认按钮应该先是禁用的，
+    // 逐条补完（两条手动填，一条勾「不用填」）才能点亮
+    const confirmButton = confirmDialog.getByRole('button', { name: /^确认创建/ });
+    await expect(confirmButton).toBeDisabled();
+    await confirmDialog.getByLabel('发布会 PPT：给经销商讲渠道政策 截止时间').fill('下周一之前');
+    await confirmDialog.getByLabel('发布会宣传文案，先出两版 截止时间').fill('下周一之前');
+    await expect(confirmButton).toBeDisabled();
+    await confirmDialog.getByLabel('汇总上季度各区域销售数据 不用填截止时间').check();
+    await expect(confirmButton).toBeEnabled();
+    await confirmButton.click();
+
     await expect(page.locator('[aria-label^="展开任务："]')).toHaveCount(4, { timeout: 10_000 });
   });
 
@@ -60,7 +76,9 @@ test('mock 全链路：配置→倒活→拆解→筛选→对话→汇报→重
     await page.getByRole('tab', { name: '汇报' }).click();
     await page.getByRole('button', { name: /让 AI 写日报/ }).click();
     await expect(page.getByRole('button', { name: '复制全文' })).toBeVisible({ timeout: 10_000 });
-    const reportText = await page.locator('.whitespace-pre-wrap').first().textContent();
+    // 报告输出现在走 MarkdownView 渲染成真正的富文本（不再是 whitespace-pre-wrap 纯文本），
+    // 找外层的报告卡片容器取文本即可
+    const reportText = await page.locator('.shadow-card').first().textContent();
     expect(reportText?.length ?? 0).toBeGreaterThan(0);
   });
 

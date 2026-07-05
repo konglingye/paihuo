@@ -22,6 +22,8 @@ import { createLlmDriver } from '@/src/agents/harness/llmDriver';
 import { runOrganize } from '@/src/agents/runOrganize';
 import { DECOMPOSER_SAMPLE_INPUT } from '@/src/mocks/llm/fixtures';
 import { useDecomposeRun } from './useDecomposeRun';
+import { DecomposeConfirmSheet } from './DecomposeConfirmSheet';
+import type { DecomposerOutput } from '@/src/agents/profiles/decomposer';
 import type { FragmentAttachment } from '@/src/store/schema';
 
 const THINKING_TEXT: Record<'reading' | 'drafting', string> = {
@@ -58,7 +60,7 @@ export function DumpPanel() {
   const [justAddedIds, setJustAddedIds] = useState<string[]>([]);
   const [organizing, setOrganizing] = useState(false);
   const [dismissedRelationIds, setDismissedRelationIds] = useState<Set<string>>(new Set());
-  const { phase, error, run } = useDecomposeRun();
+  const { phase, error, pendingOutput, run, confirm, cancel } = useDecomposeRun();
   const { show } = useToast();
 
   const tasks = useTasksStore((s) => s.tasks);
@@ -90,13 +92,18 @@ export function DumpPanel() {
   async function handleDecompose(text: string) {
     if (!text.trim() && pendingAttachments.length === 0) return;
     const fragment = addFragment({ raw: text, attachments: pendingAttachments });
-    const before = new Set(Object.keys(useTasksStore.getState().tasks));
     await run(fragment);
-    const after = Object.keys(useTasksStore.getState().tasks);
-    setJustAddedIds(after.filter((id) => !before.has(id)));
+    // 落库挪到确认弹窗点"确认创建"之后才发生（见 handleConfirmDecompose），这里只管收起倒活框
     setDumpText('');
     setPendingAttachments([]);
     setCollapsed(true);
+  }
+
+  function handleConfirmDecompose(filledOutput: DecomposerOutput) {
+    const before = new Set(Object.keys(useTasksStore.getState().tasks));
+    confirm(filledOutput);
+    const after = Object.keys(useTasksStore.getState().tasks);
+    setJustAddedIds(after.filter((id) => !before.has(id)));
   }
 
   async function handleFindRelations() {
@@ -285,6 +292,13 @@ export function DumpPanel() {
           </p>
         )}
       </div>
+
+      <DecomposeConfirmSheet
+        open={phase === 'confirming'}
+        output={pendingOutput}
+        onConfirm={handleConfirmDecompose}
+        onCancel={cancel}
+      />
     </div>
   );
 }

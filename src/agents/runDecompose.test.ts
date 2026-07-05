@@ -41,7 +41,7 @@ describe('runDecompose', () => {
     return Object.values(useFragmentsStore.getState().fragments)[0];
   }
 
-  it('契约校验一次通过：产出任务并落库', async () => {
+  it('契约校验一次通过：原样交出契约输出，不直接落库（落库交给用户确认后的那一步）', async () => {
     const llm = scriptedDriver([{ text: VALID_OUTPUT, toolCalls: [] }]);
     const result = await runDecompose(getFragment(), {
       registry: createDefaultToolRegistry(),
@@ -52,13 +52,14 @@ describe('runDecompose', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.materialized.tasks).toHaveLength(2);
+      expect(result.output.tasks).toHaveLength(2);
+      expect(result.fragmentId).toBe(getFragment().id);
       expect(result.agentRun.outcome).toBe('contract');
     }
-    expect(Object.keys(useTasksStore.getState().tasks)).toHaveLength(2);
+    expect(Object.keys(useTasksStore.getState().tasks)).toHaveLength(0);
   });
 
-  it('契约校验两次都失败：走降级路径，产出「待手动拆」卡（DoD 单测项）', async () => {
+  it('契约校验两次都失败：走降级路径，产出「待手动拆」这一条契约输出（DoD 单测项），同样不直接落库', async () => {
     const llm = scriptedDriver([
       { text: '这不是 JSON', toolCalls: [] },
       { text: '仍然不是 JSON', toolCalls: [] },
@@ -73,11 +74,11 @@ describe('runDecompose', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.agentRun.outcome).toBe('contract_fallback');
-      expect(result.materialized.tasks).toHaveLength(1);
-      expect(result.materialized.tasks[0]).toMatchObject({ fit: 'self', type: 'misc' });
-      expect(result.materialized.tasks[0].title).toContain('待手动拆');
+      expect(result.output.tasks).toHaveLength(1);
+      expect(result.output.tasks[0]).toMatchObject({ fit: 'self', type: 'misc' });
+      expect(result.output.tasks[0].title).toContain('待手动拆');
     }
-    expect(Object.keys(useTasksStore.getState().tasks)).toHaveLength(1);
+    expect(Object.keys(useTasksStore.getState().tasks)).toHaveLength(0);
   });
 
   it('LLM 报 401：不落任何任务，返回引导去设置页的错误文案', async () => {
