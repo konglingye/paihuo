@@ -23,7 +23,7 @@
     "url": "https://kimi.com",
     "registerNote": "手机号/微信登录",
     "categories": ["write", "slide", "data"],
-    "strengths": "长文本能力强，适合读长会议记录、写长文案",
+    "strengths": "长文本能力强，适合读长会议记录、写长文案；也能一句话生成 PPT 大纲",
     "priceNote": "有免费额度"
   },
   {
@@ -115,15 +115,6 @@
     "categories": ["misc"],
     "strengths": "剪视频、加字幕、AI 配音一站式",
     "priceNote": "部分功能需会员"
-  },
-  {
-    "id": "aippt",
-    "name": "AiPPT",
-    "url": "https://www.aippt.cn",
-    "registerNote": "手机号注册",
-    "categories": ["slide"],
-    "strengths": "一句话生成 PPT 大纲和排版，国产 AI-PPT 工具",
-    "priceNote": "有免费额度"
   },
   {
     "id": "youdao",

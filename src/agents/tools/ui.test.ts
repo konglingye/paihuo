@@ -60,17 +60,17 @@ describe('ui 工具（reveal_card/notify/open_tool_site）', () => {
 
     it('打开目录里工具的真实 URL，不传 textToCopy 就不碰剪贴板', async () => {
       const createSpy = vi.spyOn(browser.tabs, 'create').mockResolvedValue({} as never);
-      const result = await openToolSiteTool.handler({ toolId: 'aippt' });
+      const result = await openToolSiteTool.handler({ toolId: 'kimi' });
 
-      expect(createSpy).toHaveBeenCalledWith({ url: expect.stringContaining('aippt.cn') });
+      expect(createSpy).toHaveBeenCalledWith({ url: expect.stringContaining('kimi.com') });
       expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
-      expect(result).toMatchObject({ opened: true, name: 'AiPPT' });
+      expect(result).toMatchObject({ opened: true, name: 'Kimi' });
       createSpy.mockRestore();
     });
 
     it('传了 textToCopy 就先复制再开标签', async () => {
       const createSpy = vi.spyOn(browser.tabs, 'create').mockResolvedValue({} as never);
-      await openToolSiteTool.handler({ toolId: 'aippt', textToCopy: '帮我出个大纲【产品卖点】' });
+      await openToolSiteTool.handler({ toolId: 'kimi', textToCopy: '帮我出个大纲【产品卖点】' });
 
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('帮我出个大纲【产品卖点】');
       expect(createSpy).toHaveBeenCalled();
