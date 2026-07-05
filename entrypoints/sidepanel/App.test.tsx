@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { fakeBrowser } from 'wxt/testing';
 import { useCaptureStore, useTasksStore, useUiStore } from '@/src/store';
 import App from './App';
@@ -7,7 +7,14 @@ import App from './App';
 describe('App', () => {
   beforeEach(() => {
     fakeBrowser.reset();
-    useUiStore.setState({ activeTab: 'overview', chatOpen: false, settingsOpen: false, reveal: null, notification: null });
+    useUiStore.setState({
+      activeTab: 'overview',
+      chatOpen: false,
+      settingsOpen: false,
+      reveal: null,
+      notification: null,
+      pendingChatPrompt: null,
+    });
     useTasksStore.setState({ tasks: {} });
     useCaptureStore.setState({ pendingText: null });
   });
@@ -25,5 +32,14 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('tab', { name: '活儿' }));
     expect(screen.getByRole('tab', { name: '活儿' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByLabelText('任务输入')).toBeInTheDocument();
+  });
+
+  it('uiStore.requestChatPrompt 打开对话抽屉并把话真的捎给小派——之前关联横幅点了按钮只开空对话框，没人说话', async () => {
+    render(<App />);
+    await act(async () => {
+      useUiStore.getState().requestChatPrompt('帮我理一下「PPT」和「文案」共用的关键信息');
+    });
+    expect(useUiStore.getState().chatOpen).toBe(true);
+    expect(screen.getByText('帮我理一下「PPT」和「文案」共用的关键信息')).toBeInTheDocument();
   });
 });

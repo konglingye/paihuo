@@ -8,6 +8,7 @@ const INITIAL = {
   settingsOpen: false,
   reveal: null,
   notification: null,
+  pendingChatPrompt: null,
 } as const;
 
 describe('uiStore', () => {
@@ -59,5 +60,19 @@ describe('uiStore', () => {
 
     useUiStore.getState().notify('活儿有点多，喝口水');
     expect(useUiStore.getState().notification).toMatchObject({ text: '活儿有点多，喝口水', nonce: 2 });
+  });
+
+  it('requestChatPrompt 记录待发送的对话内容，nonce 递增（同样的文本也能重新触发）——关联横幅"好，先定关键信息"用这个真正把话捎给小派', () => {
+    useUiStore.getState().requestChatPrompt('帮我理一下这几件事的关键信息');
+    expect(useUiStore.getState().pendingChatPrompt).toMatchObject({
+      text: '帮我理一下这几件事的关键信息',
+      nonce: 1,
+    });
+
+    useUiStore.getState().requestChatPrompt('帮我理一下这几件事的关键信息');
+    expect(useUiStore.getState().pendingChatPrompt).toMatchObject({
+      text: '帮我理一下这几件事的关键信息',
+      nonce: 2,
+    });
   });
 });

@@ -24,7 +24,7 @@ import { DECOMPOSER_SAMPLE_INPUT } from '@/src/mocks/llm/fixtures';
 import { useDecomposeRun } from './useDecomposeRun';
 import { DecomposeConfirmSheet } from './DecomposeConfirmSheet';
 import type { DecomposerOutput } from '@/src/agents/profiles/decomposer';
-import type { FragmentAttachment } from '@/src/store/schema';
+import type { FragmentAttachment, Relation, Task } from '@/src/store/schema';
 
 const THINKING_TEXT: Record<'reading' | 'drafting', string> = {
   reading: '正在读你贴的内容…',
@@ -38,6 +38,17 @@ function SkeletonCard() {
       <div className="h-[11px] w-1/2 rounded bg-black/[.06]" />
     </div>
   );
+}
+
+/**
+ * 关联横幅「好，先定关键信息」发给小派的话——之前这个按钮只 openChat() 弹个空对话框，没有
+ * 真的把关联信息说给小派听，用户点了完全没反应。这里把涉及的任务标题和关联理由拼成一句自然的
+ * 请求，小派拿到系统提示词里的任务快照，就能顺着这句话问出真正有用的澄清问题。
+ */
+function buildRelationPrompt(relation: Relation, tasksById: Record<string, Task>): string {
+  const titles = relation.taskIds.map((id) => tasksById[id]?.title).filter((t): t is string => !!t);
+  const titleText = titles.length > 0 ? titles.map((t) => `「${t}」`).join('和') : '这几件事';
+  return `帮我理一下 ${titleText} 共用的关键信息，一次性定下来，两边都能接着用。`;
 }
 
 function AnimatedEntry({ delayMs, children }: { delayMs: number; children: React.ReactNode }) {
@@ -69,7 +80,7 @@ export function DumpPanel() {
   const settings = useSettingsStore((s) => s.settings);
   const taskFilter = useUiStore((s) => s.taskFilter);
   const setTaskFilter = useUiStore((s) => s.setTaskFilter);
-  const openChat = useUiStore((s) => s.openChat);
+  const requestChatPrompt = useUiStore((s) => s.requestChatPrompt);
   const addFragment = useFragmentsStore((s) => s.addFragment);
 
   const busy = phase === 'reading' || phase === 'drafting';
@@ -125,9 +136,8 @@ export function DumpPanel() {
     }
   }
 
-  function handleGoToChat() {
-    openChat();
-    show('小派对话马上就来，先记着这个关联');
+  function handleGoToChat(relation: Relation) {
+    requestChatPrompt(buildRelationPrompt(relation, tasks));
   }
 
   const allTasks = Object.values(tasks);
@@ -256,7 +266,7 @@ export function DumpPanel() {
           <RelationBanner
             key={relation.id}
             relation={relation}
-            onGoToChat={handleGoToChat}
+            onGoToChat={() => handleGoToChat(relation)}
             onDismiss={() => setDismissedRelationIds((prev) => new Set(prev).add(relation.id))}
           />
         ))}

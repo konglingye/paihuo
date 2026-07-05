@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { IconSprite } from '@/src/components/icons/IconSprite';
 import { Icon } from '@/src/components/icons/Icon';
 import { useCaptureStore, useSettingsStore, useTasksStore, useUiStore, useWorklogStore } from '@/src/store';
@@ -44,7 +44,20 @@ function App() {
   const chatOpen = useUiStore((s) => s.chatOpen);
   const openChat = useUiStore((s) => s.openChat);
   const closeChat = useUiStore((s) => s.closeChat);
+  const pendingChatPrompt = useUiStore((s) => s.pendingChatPrompt);
   const chat = useOrchestratorChat();
+  const lastPromptNonce = useRef(0);
+
+  // 关联横幅「好，先定关键信息」等场景的桥接：那些地方拿不到这里的 chat.send（只在 App 顶层
+  // 实例化），只能落 uiStore 的一次性信号，这里接住并真正发给小派——不然点了按钮只是打开一个
+  // 空对话框，没人说话（真实反馈的 bug）。
+  useEffect(() => {
+    if (pendingChatPrompt && pendingChatPrompt.nonce !== lastPromptNonce.current) {
+      lastPromptNonce.current = pendingChatPrompt.nonce;
+      openChat();
+      void chat.send(pendingChatPrompt.text);
+    }
+  }, [pendingChatPrompt, openChat, chat.send]);
 
   // 会话次日归档（arch §3.3）：每次面板打开时检查——如果换了新的一天，把上一个活跃日归档进工作日志
   useEffect(() => {
