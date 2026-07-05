@@ -43,6 +43,31 @@ describe('decomposer profile', () => {
     expect(DecomposerOutputSchema.safeParse(sample).success).toBe(true);
   });
 
+  it('fit=self 却没给小抄（prompt）时契约拒收——真实反馈的 bug：模型漏填 prompt，任务卡「复制小抄」按钮复制出空文本', () => {
+    const noPrompt = {
+      tasks: [{ localId: 'n1', title: '确认 PPT 主题、受众与演示场景', type: 'comm', fit: 'self', saveMin: 5 }],
+      groups: [],
+      relates: [],
+    };
+    expect(DecomposerOutputSchema.safeParse(noPrompt).success).toBe(false);
+
+    const blankPrompt = {
+      tasks: [{ localId: 'n1', title: '确认 PPT 主题', type: 'comm', fit: 'self', prompt: '   ', saveMin: 5 }],
+      groups: [],
+      relates: [],
+    };
+    expect(DecomposerOutputSchema.safeParse(blankPrompt).success).toBe(false);
+
+    const withPrompt = {
+      tasks: [
+        { localId: 'n1', title: '确认 PPT 主题', type: 'comm', fit: 'self', prompt: '领导，PPT 主题定一下？', saveMin: 5 },
+      ],
+      groups: [],
+      relates: [],
+    };
+    expect(DecomposerOutputSchema.safeParse(withPrompt).success).toBe(true);
+  });
+
   it('fallback 把原文塞进一张待手动拆的卡', () => {
     const result = profile.fallback?.('这段话解析不出来');
     expect(result).toMatchObject({ tasks: [{ fit: 'self', type: 'misc' }] });

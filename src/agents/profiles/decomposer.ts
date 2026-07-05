@@ -29,11 +29,25 @@ export const DecomposerRelateSchema = z.object({
 });
 
 /** 拆解官输出契约（spec §6.1） */
-export const DecomposerOutputSchema = z.object({
-  tasks: z.array(DecomposerTaskDraftSchema),
-  groups: z.array(DecomposerGroupDraftSchema),
-  relates: z.array(DecomposerRelateSchema),
-});
+export const DecomposerOutputSchema = z
+  .object({
+    tasks: z.array(DecomposerTaskDraftSchema),
+    groups: z.array(DecomposerGroupDraftSchema),
+    relates: z.array(DecomposerRelateSchema),
+  })
+  // fit=self 必须带小抄（真实反馈的 bug：模型漏填 prompt，任务卡「复制小抄」按钮复制出空文本）——
+  // 校验失败会走 loop.ts 的契约重试，把这条错误原样喂回给模型，让它补上
+  .superRefine((data, ctx) => {
+    data.tasks.forEach((t, i) => {
+      if (t.fit === 'self' && !t.prompt?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['tasks', i, 'prompt'],
+          message: `任务「${t.title}」fit=self 但没给小抄，必须在 prompt 里写一份可以直接复制发出去的消息`,
+        });
+      }
+    });
+  });
 export type DecomposerOutput = z.infer<typeof DecomposerOutputSchema>;
 
 const CONTRACT_DESCRIPTION = `{
@@ -84,6 +98,7 @@ export function buildDecomposerProfile(existingTasks: Task[]): AgentProfile {
         '标题必须是动词开头的交付物，不是模糊的事项描述',
         'fit 三档宁保守不吹牛：AI 只能起草的算 assist，不算 full',
         '每条 prompt 里用户必须补充的信息一律写成【…】空槽',
+        'fit=self 的任务必须在 prompt 里给一份可以直接复制发出去的消息小抄（比如发给同事/领导的一句话），不能留空',
         'saveMin 保守估计；due 提不出来就留空，不要瞎猜',
       ]),
       memory: buildMemoryBlock(useMemoryStore.getState().profileText()),

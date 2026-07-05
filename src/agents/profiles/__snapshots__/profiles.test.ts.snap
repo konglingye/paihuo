@@ -25,6 +25,7 @@ exports[`decomposer profile > 组装出的 systemPrompt 快照锁定 1`] = `
 - 标题必须是动词开头的交付物，不是模糊的事项描述
 - fit 三档宁保守不吹牛：AI 只能起草的算 assist，不算 full
 - 每条 prompt 里用户必须补充的信息一律写成【…】空槽
+- fit=self 的任务必须在 prompt 里给一份可以直接复制发出去的消息小抄（比如发给同事/领导的一句话），不能留空
 - saveMin 保守估计；due 提不出来就留空，不要瞎猜"
 `;
 
